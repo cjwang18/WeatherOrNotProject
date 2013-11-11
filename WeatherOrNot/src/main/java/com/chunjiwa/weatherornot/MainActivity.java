@@ -18,6 +18,9 @@ import android.os.Build;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class MainActivity extends Activity {
 
     // Variables
@@ -122,8 +125,12 @@ public class MainActivity extends Activity {
             if (determineLocationType(query)) {
                 // passed validation and location type determination
                 // proceed in making request
+                Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
+                String queryParams = "?location=" + query + "&locType=" + locationType + "&unit=" + tempUnitSelected;
+                Log.d("WON", "handleSearchIntent() - queryParams: " + queryParams);
             } else {
                 // did not pass validation
+                Log.d("WON", "handleSearchIntent() - did not pass validation");
             }
 
 
@@ -132,39 +139,54 @@ public class MainActivity extends Activity {
 
     private boolean determineLocationType(String location) {
         // Don't need to worry if 'location' string is empty; handled by Android
-        // if 'location' doesn't match pattern AND is all numbers
-
-        // if location.split's length == 1
-            // if location is 5 digits (location.length == 5 and location is all numbers)
-            // else, invalid zip code or location
-        // else (if location.split's length > 1 => city, region, country format
-            // test for illegal characters
-            // test for pattern match
 
         //String[] spaceSplit = location.split(" ");
         String[] commaSplit = location.split(",");
-        if (/*spaceSplit.length == 1 || */commaSplit.length == 1) {
+        if (/*spaceSplit.length == 1 || */commaSplit.length == 1) { // if location.split's length == 1
+            // if location is 5 digits (location.length == 5 and location is all numbers)
             if (location.length() == 5 && location.matches("^\\d+$")) {
                 // valid ZIP code
                 Log.d("WON", "determineLocationType() - valid ZIP code");
+                locationType = "zip";
             } else if (location.length() != 5 && location.matches("^\\d+$")) {
                 // invalid ZIP code - too many digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - too many digits");
-                Toast.makeText(getBaseContext(), "Please enter a valid 5 digit U.S. ZIP code.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
+                return false;
             } else if (location.length() == 5 && !location.matches("^\\d+$")) {
                 // invalid ZIP code - not all digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - not all digits");
-                Toast.makeText(getBaseContext(), "Please enter a valid 5 digit U.S. ZIP code.", Toast.LENGTH_SHORT).show();
-            } else {
+                Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
+                return false;
+            } else { // else, invalid zip code or location
                 // invalid LOCATION format
                 Log.d("WON", "determineLocationType() - invalid LOCATION format");
-                Toast.makeText(getBaseContext(), "Please enter a valid location.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
+                return false;
             }
-        } else {
+        } else { // else (if location.split's length > 1 => city, region, country format
+            // test for illegal characters
+            Pattern p1 = Pattern.compile("[\"()*!@#$&=|;:?/.]");
+            Matcher m1 = p1.matcher(location);
+            if (m1.find()) {
+                Log.d("WON", "determineLocationType() - illegal characters detected");
+                Toast.makeText(getBaseContext(), R.string.validation_illegalCharacters, Toast.LENGTH_LONG).show();
+                return false;
+            }
+            String temp = location.replaceAll("['-]", " ");
+            // test for pattern match
+            Pattern p2 = Pattern.compile("^(([a-zA-Z])+(\\s)*)+,(\\s)*(([a-zA-Z])+(\\s)*)+(,(\\s)*(([a-zA-Z])+(\\s)*)+)*$");
+            Matcher m2 = p2.matcher(temp);
+            if (!m2.find()) {
+                Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
+                return false;
+            }
 
+            locationType = "city";
         }
 
-        return false;
+        return true;
     }
 
 }

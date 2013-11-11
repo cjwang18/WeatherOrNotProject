@@ -9,5 +9,8 @@
     <string name="action_tempUnitSelect_default">&#xb0;F</string>
     <string name="action_tempUnitSelect_f">&#xb0;F</string>
     <string name="action_tempUnitSelect_c">&#xb0;C</string>
+    <string name="validation_invalidZip">Please enter a valid 5 digit U.S. ZIP code.</string>
+    <string name="validation_invalidLocation">Please enter a valid location, following one of these formats:\nCity, State\nCity, Country\nCity, State, Country</string>
+    <string name="validation_illegalCharacters">Please remove any of the following characters from your search:\n\"()*!@#$&amp;=|;:?\/.</string>
 
 </resources>
