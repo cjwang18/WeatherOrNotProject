@@ -158,6 +158,7 @@ public class MainActivity extends Activity {
             } else {
                 // invalid LOCATION format
                 Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                Toast.makeText(getBaseContext(), "Please enter a valid location.", Toast.LENGTH_SHORT).show();
             }
         } else {
 
