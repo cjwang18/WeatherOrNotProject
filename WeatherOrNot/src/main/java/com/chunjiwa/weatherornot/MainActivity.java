@@ -1,11 +1,12 @@
 package com.chunjiwa.weatherornot;
 
 import android.app.Activity;
-import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,10 +15,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -122,19 +125,44 @@ public class MainActivity extends Activity {
             String query = intent.getStringExtra(SearchManager.QUERY).trim();
             Log.d("WON", "User typed in: " + query);
             //use the query to search your data somehow
-            if (determineLocationType(query)) {
-                // passed validation and location type determination
-                // proceed in making request
-                Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
-                String queryParams = "?location=" + query + "&locType=" + locationType + "&unit=" + tempUnitSelected;
-                Log.d("WON", "handleSearchIntent() - queryParams: " + queryParams);
+            if (isOnline()) {
+                // ok to fetch data
+                if (determineLocationType(query)) {
+                    // passed validation and location type determination
+                    // proceed in making request
+                    Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
+                    try {
+                        String queryParams = "?location=" + URLEncoder.encode(query, "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
+                        String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
+                        Log.d("WON", "handleSearchIntent() - queryURI: " + queryURI);
+                        ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
+                        progress.setVisibility(View.VISIBLE);
+                        new GetWeatherTask(progress).execute(queryURI);
+                    } catch (UnsupportedEncodingException e) {
+                        Log.d("WON", "handleSearchIntent() - Unsupported Encoding Exception");
+                        return;
+                    }
+                } else {
+                    // did not pass validation
+                    Log.d("WON", "handleSearchIntent() - did not pass validation");
+                }
             } else {
-                // did not pass validation
-                Log.d("WON", "handleSearchIntent() - did not pass validation");
+                // display no connectivity error
+                Toast.makeText(getBaseContext(), R.string.no_network_connectivity, Toast.LENGTH_SHORT).show();
+                Log.d("WON", "handleSearchIntent() - no network connectivity");
             }
 
-
         }
+    }
+
+    private boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        }
+        return false;
     }
 
     private boolean determineLocationType(String location) {

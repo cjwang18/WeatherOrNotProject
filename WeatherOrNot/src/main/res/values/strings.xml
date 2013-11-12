@@ -12,5 +12,6 @@
     <string name="validation_invalidZip">Please enter a valid 5 digit U.S. ZIP code.</string>
     <string name="validation_invalidLocation">Please enter a valid location, following one of these formats:\nCity, State\nCity, Country\nCity, State, Country</string>
     <string name="validation_illegalCharacters">Please remove any of the following characters from your search:\n\"()*!@#$&amp;=|;:?\/.</string>
+    <string name="no_network_connectivity">Please check your network connectivity settings.</string>
 
 </resources>
