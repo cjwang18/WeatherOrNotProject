@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
@@ -52,7 +53,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        Log.d("WON", "MainActivity - onNewIntent()");
+        //Log.d("WON", "MainActivity - onNewIntent()");
         handleSearchIntent(intent);
     }
 
@@ -83,14 +84,14 @@ public class MainActivity extends Activity {
                 tempUnitSelected = "f";
                 tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_f);
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
-                Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
+                //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
                 break;
             case R.id.cUnitSelect:
                 tempUnitSelected = "c";
                 tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_c);
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
-                Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
+                //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
                 break;
         }
@@ -120,24 +121,25 @@ public class MainActivity extends Activity {
      * Handles search intent (event).
      */
     private void handleSearchIntent(Intent intent) {
-        Log.d("WON", "MainActivity - handleSearchIntent()");
+        //Log.d("WON", "MainActivity - handleSearchIntent()");
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY).trim();
-            Log.d("WON", "User typed in: " + query);
+            //Log.d("WON", "User typed in: " + query);
             //use the query to search your data somehow
             if (isOnline()) {
                 // ok to fetch data
                 if (determineLocationType(query)) {
                     // passed validation and location type determination
                     // proceed in making request
-                    Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
+                    //Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
                     try {
                         String queryParams = "?location=" + URLEncoder.encode(query, "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
                         String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
                         Log.d("WON", "handleSearchIntent() - queryURI: " + queryURI);
                         ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
                         progress.setVisibility(View.VISIBLE);
-                        new GetWeatherTask(progress).execute(queryURI);
+                        TextView text = (TextView) findViewById(R.id.status_text);
+                        new GetWeatherTask(progress, text).execute(queryURI);
                     } catch (UnsupportedEncodingException e) {
                         Log.d("WON", "handleSearchIntent() - Unsupported Encoding Exception");
                         return;
@@ -149,7 +151,7 @@ public class MainActivity extends Activity {
             } else {
                 // display no connectivity error
                 Toast.makeText(getBaseContext(), R.string.no_network_connectivity, Toast.LENGTH_SHORT).show();
-                Log.d("WON", "handleSearchIntent() - no network connectivity");
+                //Log.d("WON", "handleSearchIntent() - no network connectivity");
             }
 
         }
@@ -174,7 +176,7 @@ public class MainActivity extends Activity {
             // if location is 5 digits (location.length == 5 and location is all numbers)
             if (location.length() == 5 && location.matches("^\\d+$")) {
                 // valid ZIP code
-                Log.d("WON", "determineLocationType() - valid ZIP code");
+                //Log.d("WON", "determineLocationType() - valid ZIP code");
                 locationType = "zip";
             } else if (location.length() != 5 && location.matches("^\\d+$")) {
                 // invalid ZIP code - too many digits
@@ -188,7 +190,7 @@ public class MainActivity extends Activity {
                 return false;
             } else { // else, invalid zip code or location
                 // invalid LOCATION format
-                Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                //Log.d("WON", "determineLocationType() - invalid LOCATION format");
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -197,7 +199,7 @@ public class MainActivity extends Activity {
             Pattern p1 = Pattern.compile("[\"()*!@#$&=|;:?/.]");
             Matcher m1 = p1.matcher(location);
             if (m1.find()) {
-                Log.d("WON", "determineLocationType() - illegal characters detected");
+                //Log.d("WON", "determineLocationType() - illegal characters detected");
                 Toast.makeText(getBaseContext(), R.string.validation_illegalCharacters, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -206,7 +208,7 @@ public class MainActivity extends Activity {
             Pattern p2 = Pattern.compile("^(([a-zA-Z])+(\\s)*)+,(\\s)*(([a-zA-Z])+(\\s)*)+(,(\\s)*(([a-zA-Z])+(\\s)*)+)*$");
             Matcher m2 = p2.matcher(temp);
             if (!m2.find()) {
-                Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                //Log.d("WON", "determineLocationType() - invalid LOCATION format");
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
