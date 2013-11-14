@@ -15,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -139,7 +140,8 @@ public class MainActivity extends Activity {
                         ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
                         progress.setVisibility(View.VISIBLE);
                         TextView text = (TextView) findViewById(R.id.status_text);
-                        new GetWeatherTask(progress, text).execute(queryURI);
+                        LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
+                        new GetWeatherTask(progress, text, weather, this).execute(queryURI);
                     } catch (UnsupportedEncodingException e) {
                         Log.d("WON", "handleSearchIntent() - Unsupported Encoding Exception");
                         return;
@@ -161,10 +163,7 @@ public class MainActivity extends Activity {
         ConnectivityManager cm =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            return true;
-        }
-        return false;
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
     private boolean determineLocationType(String location) {

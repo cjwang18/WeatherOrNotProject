@@ -1,9 +1,15 @@
 package com.chunjiwa.weatherornot;
 
+import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -18,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -27,10 +34,14 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
 
     private final ProgressBar progress;
     private final TextView text;
+    private final LinearLayout weatherLayout;
+    private final Context context;
 
-    public GetWeatherTask(final ProgressBar progress, final TextView text) {
+    public GetWeatherTask(final ProgressBar progress, final TextView text, final LinearLayout weather, final Context context) {
         this.progress = progress;
         this.text = text;
+        this.weatherLayout = weather;
+        this.context = context;
     }
 
     @Override
@@ -50,7 +61,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
         // Parse weather JSON
         try {
             JSONObject jObject = new JSONObject(result);
-            text.setText(result);
+            //text.setText(result);
             JSONObject weather = jObject.getJSONObject("weather");
 
             String city = weather.getJSONObject("location").getString("@city");
@@ -63,6 +74,45 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             JSONArray forecast = weather.getJSONArray("forecast");
 
             Log.d("WON", "onPostExecute() - forecast: " + forecast);
+
+            // Reset weatherLayout
+            weatherLayout.removeAllViews();
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+            // Location - City
+            TextView tvCity = new TextView(context);
+            tvCity.setLayoutParams(lp);
+            tvCity.setText(city);
+            weatherLayout.addView(tvCity);
+
+            // Location - (Region, ) Country
+            TextView tvCountry = new TextView(context);
+            tvCountry.setLayoutParams(lp);
+            if (region.equals("N/A"))
+                tvCountry.setText(country);
+            else
+                tvCountry.setText(region + ", " + country);
+            weatherLayout.addView(tvCountry);
+
+            // Condition Img
+            ImageView ivCond = new ImageView(context);
+            ivCond.setLayoutParams(lp);
+            new GetBitmap(ivCond).execute(img);
+            weatherLayout.addView(ivCond);
+
+            // Condition Text
+            TextView tvCondText = new TextView(context);
+            tvCondText.setLayoutParams(lp);
+            tvCondText.setText(condText);
+            weatherLayout.addView(tvCondText);
+
+            // Condition Temp
+            TextView tvCondTemp = new TextView(context);
+            tvCondTemp.setLayoutParams(lp);
+            tvCondTemp.setText(condTemp + (char) 0x00B0 + unit);
+            weatherLayout.addView(tvCondTemp);
+
         } catch (JSONException e) {
             // oops
             Log.d("WON", "onPostExecute() - JSONException ");
@@ -78,9 +128,6 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     private String getWeatherData(String myurl) throws IOException {
         InputStream is = null;
         String result = null;
-        /*// Only display the first 500 characters of the retrieved
-        // web page content.
-        int len = 500;*/
 
         try {
             URL url = new URL(myurl);
@@ -107,10 +154,6 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             result = sb.toString();
             return result;
 
-            /*// Convert the InputStream into a string
-            String contentAsString = readIt(is, len);
-            return contentAsString;*/
-
             // Makes sure that the InputStream is closed after the app is
             // finished using it.
         } finally {
@@ -120,12 +163,4 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
         }
     }
 
-    // Reads an InputStream and converts it to a String.
-    public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
-        Reader reader = null;
-        reader = new InputStreamReader(stream, "UTF-8");
-        char[] buffer = new char[len];
-        reader.read(buffer);
-        return new String(buffer);
-    }
 }
