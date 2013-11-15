@@ -5,4 +5,10 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="LocationHeader1" parent="@android:style/Widget.TextView">
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+        <!--<item name="android:textStyle">thin</item>-->
+    </style>
+
 </resources>

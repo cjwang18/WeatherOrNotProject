@@ -84,6 +84,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             TextView tvCity = new TextView(context);
             tvCity.setLayoutParams(lp);
             tvCity.setText(city);
+            tvCity.setTextAppearance(context, R.style.LocationHeader1);
             weatherLayout.addView(tvCity);
 
             // Location - (Region, ) Country
