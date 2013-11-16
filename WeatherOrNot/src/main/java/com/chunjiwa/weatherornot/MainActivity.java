@@ -95,6 +95,11 @@ public class MainActivity extends Activity {
                 //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
                 break;
+            case R.id.action_share_to_facebook:
+                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
+                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
+                MainActivity.this.startActivity(shareToFbIntent);
+                break;
         }
         /*if (id == R.id.action_settings) {
             return true;

@@ -23,6 +23,12 @@
         </menu>
     </item>
 
+    <item
+        android:id="@+id/action_share_to_facebook"
+        android:icon="@drawable/ic_action_share"
+        android:title="@string/action_share_to_facebook"
+        android:showAsAction="ifRoom" />
+
     <!-- Settings, should always be in the overflow-->
     <!--<item android:id="@+id/action_settings"
         android:title="@string/action_settings"
