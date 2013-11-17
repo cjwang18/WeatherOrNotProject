@@ -18,12 +18,22 @@ import com.facebook.Session;
 import com.facebook.SessionState;
 import com.facebook.widget.WebDialog;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.List;
 
 public class ShareToFacebookActivity extends Activity {
 
+    // Constants
+    private final static int POST_CURRENT_WEATHER = 0;
+    private final static int POST_WEATHER_FORECAST = 1;
+    private final static int POST_CANCEL = 2;
     private static final List<String> PERMISSIONS = Arrays.asList("publish_actions");
+    // Variables
+    private int which;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +46,9 @@ public class ShareToFacebookActivity extends Activity {
                     .commit();
         }
 
-        Log.d("WON", "ShareToFacebookActivity - onCreate()");
+        Intent intent = getIntent();
+        which = intent.getIntExtra("which", POST_CANCEL);
+        Log.d("WON", "ShareToFacebookActivity - onCreate(), which=" + which);
 
         // start Facebook Login
         Session.openActiveSession(this, true, new Session.StatusCallback() {
@@ -45,17 +57,75 @@ public class ShareToFacebookActivity extends Activity {
             @Override
             public void call(Session session, SessionState state, Exception exception) {
                 if (session.isOpened()) {
-                    performPublish();
+                    if (which == POST_CANCEL)
+                        finishActivity();
+                    else
+                        performPublish();
                 }
             }
         });
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.share_to_facebook, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * A placeholder fragment containing a simple view.
+     */
+    public static class PlaceholderFragment extends Fragment {
+
+        public PlaceholderFragment() {
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_share_to_facebook, container, false);
+            return rootView;
+        }
+    }
+
+    /**
+     * Helper function that ends the activity
+     */
+    private void finishActivity() {
+        this.finish();
+    }
+
+    /**
+     * Helper function to check for publish permissions
+     */
     private boolean hasPublishPermission() {
         Session session = Session.getActiveSession();
         return session != null && session.getPermissions().contains("publish_actions");
     }
 
+    /**
+     * Initializes publish action
+     */
     private void performPublish() {
         Session session = Session.getActiveSession();
         if (session != null) {
@@ -71,15 +141,85 @@ public class ShareToFacebookActivity extends Activity {
         }
     }
 
-    private void postFeedDialog() {
-        Bundle params = new Bundle();
-        params.putString("name", "Facebook SDK for Android");
-        params.putString("caption", "Build great social apps and get more installs.");
-        params.putString("description", "The Facebook SDK for Android makes it easier and faster to develop Facebook integrated Android apps.");
-        params.putString("link", "https://developers.facebook.com/android");
-        params.putString("picture", "https://raw.github.com/fbsamples/ios-3.x-howtos/master/Images/iossdk_logo.png");
+    /**
+     * Build the feed from weatherJSON
+     * stored in application state
+     */
+    private Bundle buildFeedDialog() {
+        WeatherOrNotApplication wonApp = (WeatherOrNotApplication) getApplication();
+        JSONObject weather = wonApp.getWeatherJSON();
+        //Log.d("WON", "buildFeedDialog() - weatherJSON: " + weather);
+        if (weather == null) {
+            return null;
+        }
+        try {
+            String city = weather.getJSONObject("location").getString("@city");
+            String region = weather.getJSONObject("location").getString("@region");
+            String country = weather.getJSONObject("location").getString("@country");
+            String feed = weather.getString("feed");
+            String link = weather.getString("link");
+            String img = weather.getString("img");
+            String condText = weather.getJSONObject("condition").getString("@text");
+            String condTemp = weather.getJSONObject("condition").getString("@temp");
+            String unit = weather.getJSONObject("units").getString("@temperature");
+            JSONArray forecast = weather.getJSONArray("forecast");
 
-        WebDialog feedDialog = (
+            Bundle params = new Bundle();
+
+            // Common Parameters
+            if (region.equals("N/A"))
+                params.putString("name", city + ", " + country);
+            else
+                params.putString("name", city + ", " + region + ", " + country);
+            params.putString("link", feed);
+            JSONObject properties = new JSONObject();
+            JSONObject prop1 = new JSONObject();
+            prop1.put("text", "here");
+            prop1.put("href", link);
+            properties.put("Look at details", prop1);
+            params.putString("properties", properties.toString());
+
+            // Post-specific Parameters
+            switch (which) {
+                case POST_CURRENT_WEATHER:
+                    params.putString("picture", img);
+                    params.putString("caption", "The current condition for " + city + " is " + condText + ".");
+                    params.putString("description", "Temperature is " + condTemp + (char) 0x00B0 + unit + ".");
+                    break;
+                case POST_WEATHER_FORECAST:
+                    params.putString("picture", "http://www-scf.usc.edu/~csci571/2013Fall/hw8/weather.jpg");
+                    params.putString("caption", "Weather Forecast for " + city);
+                    String description = new String();
+                    for (int i=0 ; i<forecast.length() ; i++) {
+                        JSONObject fcDay = forecast.getJSONObject(i);
+                        description += fcDay.getString("@day") + ": ";
+                        description += fcDay.getString("@text") + ", ";
+                        description += fcDay.getString("@high") + "/";
+                        description += fcDay.getString("@low") + (char) 0x00B0 + unit;
+                        if (i+1 != forecast.length())
+                            description += "; ";
+                        else
+                            description += ".";
+                    }
+                    params.putString("description", description);
+                    break;
+            }
+
+            return params;
+        } catch (JSONException e) {
+            Log.d("WON", "ShareToFacebookActivity - buildFeedDialog() - JSONException");
+        }
+
+        return null;
+    }
+
+    private void postFeedDialog() {
+
+        Bundle params = buildFeedDialog();
+
+        if (params != null) {
+            WebDialog feedDialog = (
+
                 new WebDialog.FeedDialogBuilder(ShareToFacebookActivity.this,
                         Session.getActiveSession(),
                         params))
@@ -118,52 +258,12 @@ public class ShareToFacebookActivity extends Activity {
 
                 })
                 .build();
-        feedDialog.show();
-    }
-
-    private void finishActivity() {
-        this.finish();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.share_to_facebook, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_share_to_facebook, container, false);
-            return rootView;
+            feedDialog.show();
+        } else {
+            Toast.makeText(getBaseContext(),
+                    "No weather data to post",
+                    Toast.LENGTH_SHORT).show();
+            finishActivity();
         }
     }
 

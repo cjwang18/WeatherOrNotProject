@@ -1,10 +1,6 @@
 package com.chunjiwa.weatherornot;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.Gravity;
@@ -19,16 +15,12 @@ import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -67,6 +59,9 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             JSONObject jObject = new JSONObject(result);
             //text.setText(result);
             JSONObject weather = jObject.getJSONObject("weather");
+
+            WeatherOrNotApplication wonApp = (WeatherOrNotApplication) context.getApplicationContext();
+            wonApp.setWeatherJSON(weather);
 
             String city = weather.getJSONObject("location").getString("@city");
             String region = weather.getJSONObject("location").getString("@region");

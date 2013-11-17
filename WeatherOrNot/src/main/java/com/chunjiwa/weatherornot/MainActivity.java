@@ -23,28 +23,19 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.FacebookException;
-import com.facebook.FacebookOperationCanceledException;
-import com.facebook.Session;
-import com.facebook.SessionState;
-import com.facebook.widget.WebDialog;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
 
     // Variables
+    private String locationQuery;
     private String locationType;
     private String tempUnitSelected;
     private String tempUnitSelectTitle;
-    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions");
-    private static final String PENDING_PUBLISH_KEY = "pendingPublishReauthorization";
-    private boolean pendingPublishReauthorization = false;
+    private MenuItem searchMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,17 +49,12 @@ public class MainActivity extends Activity {
         }
 
         // Initialize Variables
+        locationQuery = null;
         locationType = null;
         tempUnitSelected = "f";
         tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_default);
 
         Log.d("WON", "MainActivity - onCreate()");
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        //Log.d("WON", "MainActivity - onNewIntent()");
-        handleSearchIntent(intent);
     }
 
     @Override
@@ -78,8 +64,23 @@ public class MainActivity extends Activity {
 
         // Associate searchable configuration with the SearchView
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchMenuItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchMenuItem.getActionView();
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        final SearchView.OnQueryTextListener queryTextListener = new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                // Do nothing
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                handleSearchQuery(query);
+                return true;
+            }
+        };
+        searchView.setOnQueryTextListener(queryTextListener);
 
         MenuItem tempUnitSelect = menu.findItem(R.id.action_tempUnitSelect);
         tempUnitSelect.setTitle(tempUnitSelectTitle);
@@ -100,6 +101,10 @@ public class MainActivity extends Activity {
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
                 //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
+                if (locationQuery != null) {
+                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
+                    searchView.setQuery(locationQuery, true);
+                }
                 break;
             case R.id.cUnitSelect:
                 tempUnitSelected = "c";
@@ -107,114 +112,16 @@ public class MainActivity extends Activity {
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
                 //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
+                if (locationQuery != null) {
+                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
+                    searchView.setQuery(locationQuery, true);
+                }
                 break;
             case R.id.action_share_to_facebook:
                 handleShareToFacebook();
                 break;
         }
-        /*if (id == R.id.action_settings) {
-            return true;
-        }*/
         return super.onOptionsItemSelected(item);
-    }
-
-    private void handleShareToFacebook() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Post to Facebook");
-        builder.setItems(R.array.share_to_facebook_array, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                // 'which' parameter contains index position of selected item
-                Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
-                //postCurrentWeather();
-                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
-                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
-                MainActivity.this.startActivity(shareToFbIntent);
-            }
-        });
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
-    /*private boolean isSubsetOf(Collection<String> subset, Collection<String> superset) {
-        for (String string : subset) {
-            if (!superset.contains(string)) {
-                return false;
-            }
-        }
-        return true;
-    }*/
-
-    private void postCurrentWeather() {
-
-        Log.d("WON", "postCurrentWeather()");
-
-        // start Facebook Login
-        Session.openActiveSession(this, true, new Session.StatusCallback() {
-
-            // callback when session changes state
-            @Override
-            public void call(Session session, SessionState state, Exception exception) {
-                Log.d("WON", "postCurrentWeather() - callback when session changes state");
-                if (session.isOpened()) {
-
-                    Log.d("WON", "postCurrentWeather() - building post");
-
-                    // TESTING
-                    Bundle params = new Bundle();
-                    params.putString("name", "Facebook SDK for Android");
-                    params.putString("caption", "Build great social apps and get more installs.");
-                    params.putString("description", "The Facebook SDK for Android makes it easier and faster to develop Facebook integrated Android apps.");
-                    params.putString("link", "https://developers.facebook.com/android");
-                    params.putString("picture", "https://raw.github.com/fbsamples/ios-3.x-howtos/master/Images/iossdk_logo.png");
-
-                    WebDialog feedDialog = (
-                            new WebDialog.FeedDialogBuilder(MainActivity.this,
-                                    Session.getActiveSession(),
-                                    params))
-                            .setOnCompleteListener(new WebDialog.OnCompleteListener() {
-
-                                @Override
-                                public void onComplete(Bundle values,
-                                                       FacebookException error) {
-                                    if (error == null) {
-                                        // When the story is posted, echo the success
-                                        // and the post Id.
-                                        final String postId = values.getString("post_id");
-                                        if (postId != null) {
-                                            Toast.makeText(getBaseContext(),
-                                                    "Posted story, id: "+postId,
-                                                    Toast.LENGTH_SHORT).show();
-                                        } else {
-                                            // User clicked the Cancel button
-                                            Toast.makeText(getBaseContext(),
-                                                    "Publish cancelled",
-                                                    Toast.LENGTH_SHORT).show();
-                                        }
-                                    } else if (error instanceof FacebookOperationCanceledException) {
-                                        // User clicked the "x" button
-                                        Toast.makeText(getBaseContext(),
-                                                "Publish cancelled",
-                                                Toast.LENGTH_SHORT).show();
-                                    } else {
-                                        // Generic, ex: network error
-                                        Toast.makeText(getBaseContext(),
-                                                "Error posting story",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-
-                            })
-                            .build();
-                    feedDialog.show();
-                    // END TESTING
-
-                } else {
-                    Log.d("WON", "postCurrentWeather() - session was not opened");
-                }
-            }
-        });
-
-
     }
 
     /**
@@ -234,46 +141,72 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Handles search intent (event).
+     * Handles search query (event) by
+     * executing the GetWeather(Async)Task
      */
-    private void handleSearchIntent(Intent intent) {
-        //Log.d("WON", "MainActivity - handleSearchIntent()");
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY).trim();
-            //Log.d("WON", "User typed in: " + query);
-            //use the query to search your data somehow
-            if (isOnline()) {
-                // ok to fetch data
-                if (determineLocationType(query)) {
-                    // passed validation and location type determination
-                    // proceed in making request
-                    //Log.d("WON", "handleSearchIntent() - passed validation and location type determination");
-                    try {
-                        String queryParams = "?location=" + URLEncoder.encode(query, "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
-                        String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
-                        Log.d("WON", "handleSearchIntent() - queryURI: " + queryURI);
-                        ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
-                        progress.setVisibility(View.VISIBLE);
-                        TextView text = (TextView) findViewById(R.id.status_text);
-                        LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
-                        new GetWeatherTask(progress, text, weather, this).execute(queryURI);
-                    } catch (UnsupportedEncodingException e) {
-                        Log.d("WON", "handleSearchIntent() - Unsupported Encoding Exception");
-                        return;
-                    }
-                } else {
-                    // did not pass validation
-                    Log.d("WON", "handleSearchIntent() - did not pass validation");
+    private void handleSearchQuery(String query) {
+        //Log.d("WON", "MainActivity - handleSearchQuery()");
+        locationQuery = query.trim();
+        //Log.d("WON", "User typed in: " + locationQuery);
+        //use the query to search your data somehow
+        if (isOnline()) {
+            // ok to fetch data
+            if (determineLocationType(locationQuery)) {
+                // passed validation and location type determination
+                // proceed in making request
+                //Log.d("WON", "handleSearchQuery() - passed validation and location type determination");
+                searchMenuItem.collapseActionView();
+                try {
+                    String queryParams = "?location=" + URLEncoder.encode(locationQuery, "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
+                    String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
+                    Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
+                    ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
+                    progress.setVisibility(View.VISIBLE);
+                    TextView text = (TextView) findViewById(R.id.status_text);
+                    LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
+                    new GetWeatherTask(progress, text, weather, this).execute(queryURI);
+                } catch (UnsupportedEncodingException e) {
+                    Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
+                    return;
                 }
             } else {
-                // display no connectivity error
-                Toast.makeText(getBaseContext(), R.string.no_network_connectivity, Toast.LENGTH_SHORT).show();
-                //Log.d("WON", "handleSearchIntent() - no network connectivity");
+                // did not pass validation
+                Log.d("WON", "handleSearchQuery() - did not pass validation");
             }
-
+        } else {
+            // display no connectivity error
+            Toast.makeText(getBaseContext(), R.string.no_network_connectivity, Toast.LENGTH_SHORT).show();
+            //Log.d("WON", "handleSearchIntent() - no network connectivity");
         }
     }
 
+    /**
+     * Handles sharing to Facebook by prompting
+     * user to select a share mode and then
+     * starting the ShareToFacebookActivity
+     */
+    private void handleShareToFacebook() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Post to Facebook");
+        builder.setItems(R.array.share_to_facebook_array, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // 'which' parameter contains index position of selected item
+                Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
+                //postCurrentWeather();
+                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
+                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
+                shareToFbIntent.putExtra("which", which);
+                MainActivity.this.startActivity(shareToFbIntent);
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    /**
+     * Helper function to check
+     * network status of device
+     */
     private boolean isOnline() {
         ConnectivityManager cm =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -281,6 +214,11 @@ public class MainActivity extends Activity {
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
+    /**
+     * Validation function that also
+     * determines the location type
+     * from the inputted search query
+     */
     private boolean determineLocationType(String location) {
         // Don't need to worry if 'location' string is empty; handled by Android
 
@@ -295,16 +233,19 @@ public class MainActivity extends Activity {
             } else if (location.length() != 5 && location.matches("^\\d+$")) {
                 // invalid ZIP code - too many digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - too many digits");
+                locationQuery = null;
                 Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
                 return false;
             } else if (location.length() == 5 && !location.matches("^\\d+$")) {
                 // invalid ZIP code - not all digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - not all digits");
+                locationQuery = null;
                 Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
                 return false;
             } else { // else, invalid zip code or location
                 // invalid LOCATION format
                 //Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                locationQuery = null;
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -314,6 +255,7 @@ public class MainActivity extends Activity {
             Matcher m1 = p1.matcher(location);
             if (m1.find()) {
                 //Log.d("WON", "determineLocationType() - illegal characters detected");
+                locationQuery = null;
                 Toast.makeText(getBaseContext(), R.string.validation_illegalCharacters, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -323,6 +265,7 @@ public class MainActivity extends Activity {
             Matcher m2 = p2.matcher(temp);
             if (!m2.find()) {
                 //Log.d("WON", "determineLocationType() - invalid LOCATION format");
+                locationQuery = null;
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
