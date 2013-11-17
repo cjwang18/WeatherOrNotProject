@@ -18,7 +18,12 @@ import com.facebook.Session;
 import com.facebook.SessionState;
 import com.facebook.widget.WebDialog;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ShareToFacebookActivity extends Activity {
+
+    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,72 +45,80 @@ public class ShareToFacebookActivity extends Activity {
             @Override
             public void call(Session session, SessionState state, Exception exception) {
                 if (session.isOpened()) {
-
-                    /*// make request to the /me API
-                    Request.executeMeRequestAsync(session, new Request.GraphUserCallback() {
-
-                        // callback after Graph API response with user object
-                        @Override
-                        public void onCompleted(GraphUser user, Response response) {
-                            if (user != null) {
-                                TextView welcome = (TextView) findViewById(R.id.welcome);
-                                welcome.setText("Hello " + user.getName() + "!");
-                            }
-                        }
-                    });*/
-
-                    // TESTING
-                    Bundle params = new Bundle();
-                    params.putString("name", "Facebook SDK for Android");
-                    params.putString("caption", "Build great social apps and get more installs.");
-                    params.putString("description", "The Facebook SDK for Android makes it easier and faster to develop Facebook integrated Android apps.");
-                    params.putString("link", "https://developers.facebook.com/android");
-                    params.putString("picture", "https://raw.github.com/fbsamples/ios-3.x-howtos/master/Images/iossdk_logo.png");
-
-                    WebDialog feedDialog = (
-                            new WebDialog.FeedDialogBuilder(ShareToFacebookActivity.this,
-                                    Session.getActiveSession(),
-                                    params))
-                            .setOnCompleteListener(new WebDialog.OnCompleteListener() {
-
-                                @Override
-                                public void onComplete(Bundle values,
-                                                       FacebookException error) {
-                                    if (error == null) {
-                                        // When the story is posted, echo the success
-                                        // and the post Id.
-                                        final String postId = values.getString("post_id");
-                                        if (postId != null) {
-                                            Toast.makeText(getBaseContext(),
-                                                    "Posted story, id: " + postId,
-                                                    Toast.LENGTH_SHORT).show();
-                                        } else {
-                                            // User clicked the Cancel button
-                                            Toast.makeText(getBaseContext(),
-                                                    "Publish cancelled",
-                                                    Toast.LENGTH_SHORT).show();
-                                        }
-                                    } else if (error instanceof FacebookOperationCanceledException) {
-                                        // User clicked the "x" button
-                                        Toast.makeText(getBaseContext(),
-                                                "Publish cancelled",
-                                                Toast.LENGTH_SHORT).show();
-                                    } else {
-                                        // Generic, ex: network error
-                                        Toast.makeText(getBaseContext(),
-                                                "Error posting story",
-                                                Toast.LENGTH_SHORT).show();
-                                    }
-                                    finishActivity();
-                                }
-
-                            })
-                            .build();
-                    feedDialog.show();
-                    // END TESTING
+                    performPublish();
                 }
             }
         });
+    }
+
+    private boolean hasPublishPermission() {
+        Session session = Session.getActiveSession();
+        return session != null && session.getPermissions().contains("publish_actions");
+    }
+
+    private void performPublish() {
+        Session session = Session.getActiveSession();
+        if (session != null) {
+            if (hasPublishPermission()) {
+                // We can do the action right away.
+                postFeedDialog();
+                return;
+            } else if (session.isOpened()) {
+                // We need to get new permissions, then complete the action when we get called back.
+                session.requestNewPublishPermissions(new Session.NewPermissionsRequest(ShareToFacebookActivity.this, PERMISSIONS));
+                return;
+            }
+        }
+    }
+
+    private void postFeedDialog() {
+        Bundle params = new Bundle();
+        params.putString("name", "Facebook SDK for Android");
+        params.putString("caption", "Build great social apps and get more installs.");
+        params.putString("description", "The Facebook SDK for Android makes it easier and faster to develop Facebook integrated Android apps.");
+        params.putString("link", "https://developers.facebook.com/android");
+        params.putString("picture", "https://raw.github.com/fbsamples/ios-3.x-howtos/master/Images/iossdk_logo.png");
+
+        WebDialog feedDialog = (
+                new WebDialog.FeedDialogBuilder(ShareToFacebookActivity.this,
+                        Session.getActiveSession(),
+                        params))
+                .setOnCompleteListener(new WebDialog.OnCompleteListener() {
+
+                    @Override
+                    public void onComplete(Bundle values,
+                                           FacebookException error) {
+                        if (error == null) {
+                            // When the story is posted, echo the success
+                            // and the post Id.
+                            final String postId = values.getString("post_id");
+                            if (postId != null) {
+                                Toast.makeText(getBaseContext(),
+                                        "Posted story, id: " + postId,
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                // User clicked the Cancel button
+                                Toast.makeText(getBaseContext(),
+                                        "Publish cancelled",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        } else if (error instanceof FacebookOperationCanceledException) {
+                            // User clicked the "x" button
+                            Toast.makeText(getBaseContext(),
+                                    "Publish cancelled",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            // Generic, ex: network error
+                            Toast.makeText(getBaseContext(),
+                                    "Error posting story",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                        finishActivity();
+                    }
+
+                })
+                .build();
+        feedDialog.show();
     }
 
     private void finishActivity() {
