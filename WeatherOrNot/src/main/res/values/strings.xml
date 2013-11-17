@@ -16,5 +16,10 @@
     <string name="title_activity_share_to_facebook">ShareToFacebookActivity</string>
     <string name="action_share_to_facebook">Share</string>
     <string name="fb_app_id">692740547427623</string>
+    <string-array name="share_to_facebook_array">
+        <item>Post Current Weather</item>
+        <item>Post Weather Forecast</item>
+        <item>Cancel</item>
+    </string-array>
 
 </resources>

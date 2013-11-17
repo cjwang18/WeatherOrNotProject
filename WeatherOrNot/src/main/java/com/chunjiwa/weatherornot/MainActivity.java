@@ -1,9 +1,11 @@
 package com.chunjiwa.weatherornot;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -21,8 +23,16 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.FacebookException;
+import com.facebook.FacebookOperationCanceledException;
+import com.facebook.Session;
+import com.facebook.SessionState;
+import com.facebook.widget.WebDialog;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +42,9 @@ public class MainActivity extends Activity {
     private String locationType;
     private String tempUnitSelected;
     private String tempUnitSelectTitle;
+    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions");
+    private static final String PENDING_PUBLISH_KEY = "pendingPublishReauthorization";
+    private boolean pendingPublishReauthorization = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,15 +109,112 @@ public class MainActivity extends Activity {
                 invalidateOptionsMenu();
                 break;
             case R.id.action_share_to_facebook:
-                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
-                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
-                MainActivity.this.startActivity(shareToFbIntent);
+                handleShareToFacebook();
                 break;
         }
         /*if (id == R.id.action_settings) {
             return true;
         }*/
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleShareToFacebook() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Post to Facebook");
+        builder.setItems(R.array.share_to_facebook_array, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // 'which' parameter contains index position of selected item
+                Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
+                //postCurrentWeather();
+                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
+                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
+                MainActivity.this.startActivity(shareToFbIntent);
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    /*private boolean isSubsetOf(Collection<String> subset, Collection<String> superset) {
+        for (String string : subset) {
+            if (!superset.contains(string)) {
+                return false;
+            }
+        }
+        return true;
+    }*/
+
+    private void postCurrentWeather() {
+
+        Log.d("WON", "postCurrentWeather()");
+
+        // start Facebook Login
+        Session.openActiveSession(this, true, new Session.StatusCallback() {
+
+            // callback when session changes state
+            @Override
+            public void call(Session session, SessionState state, Exception exception) {
+                Log.d("WON", "postCurrentWeather() - callback when session changes state");
+                if (session.isOpened()) {
+
+                    Log.d("WON", "postCurrentWeather() - building post");
+
+                    // TESTING
+                    Bundle params = new Bundle();
+                    params.putString("name", "Facebook SDK for Android");
+                    params.putString("caption", "Build great social apps and get more installs.");
+                    params.putString("description", "The Facebook SDK for Android makes it easier and faster to develop Facebook integrated Android apps.");
+                    params.putString("link", "https://developers.facebook.com/android");
+                    params.putString("picture", "https://raw.github.com/fbsamples/ios-3.x-howtos/master/Images/iossdk_logo.png");
+
+                    WebDialog feedDialog = (
+                            new WebDialog.FeedDialogBuilder(MainActivity.this,
+                                    Session.getActiveSession(),
+                                    params))
+                            .setOnCompleteListener(new WebDialog.OnCompleteListener() {
+
+                                @Override
+                                public void onComplete(Bundle values,
+                                                       FacebookException error) {
+                                    if (error == null) {
+                                        // When the story is posted, echo the success
+                                        // and the post Id.
+                                        final String postId = values.getString("post_id");
+                                        if (postId != null) {
+                                            Toast.makeText(getBaseContext(),
+                                                    "Posted story, id: "+postId,
+                                                    Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            // User clicked the Cancel button
+                                            Toast.makeText(getBaseContext(),
+                                                    "Publish cancelled",
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
+                                    } else if (error instanceof FacebookOperationCanceledException) {
+                                        // User clicked the "x" button
+                                        Toast.makeText(getBaseContext(),
+                                                "Publish cancelled",
+                                                Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        // Generic, ex: network error
+                                        Toast.makeText(getBaseContext(),
+                                                "Error posting story",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                            })
+                            .build();
+                    feedDialog.show();
+                    // END TESTING
+
+                } else {
+                    Log.d("WON", "postCurrentWeather() - session was not opened");
+                }
+            }
+        });
+
+
     }
 
     /**
