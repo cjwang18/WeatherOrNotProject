@@ -28,21 +28,30 @@ import java.net.URL;
  */
 class GetWeatherTask extends AsyncTask<String, String, String> {
 
+    // Variables
     private final ProgressBar progress;
-    private final TextView text;
     private final LinearLayout weatherLayout;
     private final Context context;
+    private final LinearLayout.LayoutParams lp;
+    private final TableLayout.LayoutParams tp;
+    private final TableRow.LayoutParams rp;
 
-    public GetWeatherTask(final ProgressBar progress, final TextView text, final LinearLayout weather, final Context context) {
+    /**
+     * Constructor
+     */
+    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final Context context) {
         this.progress = progress;
-        this.text = text;
         this.weatherLayout = weather;
         this.context = context;
+
+        // Set default layout width and height parameters
+        lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        tp = new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT);
+        rp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT);
     }
 
     @Override
     protected String doInBackground(String... uri) {
-
         try {
             return getWeatherData(uri[0]);
         } catch (IOException e) {
@@ -54,15 +63,153 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     @Override
     protected void onPostExecute(String result) {
         Log.d("WON", "onPostExecute() - result: " + result);
-        // Parse weather JSON
+        if (result == null) {
+            displayGeneralErrorInLayout();
+        } else {
+            try {
+                // Convert string into JSONObject
+                JSONObject jObject = new JSONObject(result);
+                JSONObject weather = jObject.getJSONObject("weather");
+                //Log.d("WON", "onPostExecute() - weather JSON: " + weather);
+
+                // Check if returned JSON is valid weather data
+                WeatherOrNotApplication wonApp = (WeatherOrNotApplication) context.getApplicationContext();
+                if (weather.isNull("error")) {
+                    // Store weather JSON into application state
+                    wonApp.setWeatherJSON(weather);
+                    // Display weather results in layout
+                    displayWeatherInLayout(weather);
+                } else {
+                    // Clear location query in application state
+                    wonApp.setLocationQuery(null);
+                    // Clear weather JSON in application state
+                    wonApp.setWeatherJSON(null);
+                    // Display error message in layout
+                    displayErrorInLayout(weather);
+                }
+
+            } catch (JSONException e) {
+                // oops
+                Log.e("WON", "onPostExecute() - JSONException ");
+                e.printStackTrace();
+            }
+        }
+        // Hide progress activity circle
+        progress.setVisibility(View.GONE);
+    }
+
+    /**
+     * Given a URL, establishes an HttpUrlConnection and retrieves
+     * the web page content as an InputStream, which it returns as
+     * a string
+     */
+    private String getWeatherData(String myurl) throws IOException {
+        InputStream is = null;
+        String result = null;
+
         try {
-            JSONObject jObject = new JSONObject(result);
-            //text.setText(result);
-            JSONObject weather = jObject.getJSONObject("weather");
+            URL url = new URL(myurl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setReadTimeout(10000 /* milliseconds */);
+            conn.setConnectTimeout(15000 /* milliseconds */);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            // Starts the query
+            conn.connect();
+            int response = conn.getResponseCode();
+            Log.i("WON", "getWeatherData() - The response code is: " + response);
 
-            WeatherOrNotApplication wonApp = (WeatherOrNotApplication) context.getApplicationContext();
-            wonApp.setWeatherJSON(weather);
+            if (response == 200) {
+                is = conn.getInputStream();
 
+                // json is UTF-8 by default
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"), 8);
+                StringBuilder sb = new StringBuilder();
+
+                String line = null;
+                while ((line = reader.readLine()) != null)
+                {
+                    sb.append(line + "\n");
+                }
+                result = sb.toString();
+                return result;
+            } else {
+                return null;
+            }
+
+            // Makes sure that the InputStream is closed after the app is
+            // finished using it.
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+    }
+
+    /**
+     * Resets the weather layout by
+     * removing all its views
+     */
+    private void resetWeatherLayout() {
+        weatherLayout.removeAllViews();
+    }
+
+    /**
+     * Displays a generic error message
+     * in the UI layout
+     */
+    private void displayGeneralErrorInLayout() {
+        try {
+            JSONObject error = new JSONObject();
+            error.put("error", "Something went wrong. Please try again.");
+            displayErrorInLayout(error);
+        } catch (JSONException e) {
+            Log.e("WON", "displayGeneralErrorInLayout() - JSONException");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Function that takes in a JSONObject,
+     * parses it for the error message,
+     * and displays it in the UI layout
+     */
+    private void displayErrorInLayout(JSONObject error) {
+        try {
+            // Parse error message from JSON
+            String msg = error.getString("error");
+
+            // Reset weatherLayout
+            resetWeatherLayout();
+
+            // Error - Title
+            TextView tvTitle = new TextView(context);
+            tvTitle.setLayoutParams(lp);
+            tvTitle.setText("Oops...");
+            tvTitle.setTextAppearance(context, R.style.TextViewHeader1);
+            tvTitle.setGravity(Gravity.CENTER);
+            weatherLayout.addView(tvTitle);
+
+            // Error - Msg
+            TextView tvMsg = new TextView(context);
+            tvMsg.setLayoutParams(lp);
+            tvMsg.setText(msg);
+            tvMsg.setTextAppearance(context, R.style.TextViewNormal);
+            tvMsg.setGravity(Gravity.CENTER);
+            weatherLayout.addView(tvMsg);
+
+        } catch (JSONException e) {
+            Log.e("WON", "displayErrorInLayout() - JSONException ");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Function that displays the weather
+     * information in the UI layout
+     */
+    private void displayWeatherInLayout(JSONObject weather) {
+        try {
             String city = weather.getJSONObject("location").getString("@city");
             String region = weather.getJSONObject("location").getString("@region");
             String country = weather.getJSONObject("location").getString("@country");
@@ -72,15 +219,10 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             String unit = weather.getJSONObject("units").getString("@temperature");
             JSONArray forecast = weather.getJSONArray("forecast");
 
-            Log.d("WON", "onPostExecute() - forecast: " + forecast);
+            //Log.i("WON", "displayWeatherInLayout() - forecast: " + forecast);
 
             // Reset weatherLayout
-            weatherLayout.removeAllViews();
-
-            // Set default layout width and height parameters
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            TableLayout.LayoutParams tp = new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT);
-            TableRow.LayoutParams rp = new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT);
+            resetWeatherLayout();
 
             // Location - City
             TextView tvCity = new TextView(context);
@@ -138,30 +280,30 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             // Forecast Table
             TableLayout fcTable = new TableLayout(context);
             fcTable.setLayoutParams(lp);
-                // Table Header Row
-                TableRow head = new TableRow(context);
-                head.setLayoutParams(tp);
-                TextView dayH = new TextView(context);
-                dayH.setLayoutParams(rp);
-                dayH.setText("Day");
-                dayH.setTextAppearance(context, R.style.TextViewTableHeader);
-                head.addView(dayH);
-                TextView condH = new TextView(context);
-                condH.setLayoutParams(rp);
-                condH.setText("Weather");
+            // Table Header Row
+            TableRow head = new TableRow(context);
+            head.setLayoutParams(tp);
+            TextView dayH = new TextView(context);
+            dayH.setLayoutParams(rp);
+            dayH.setText("Day");
+            dayH.setTextAppearance(context, R.style.TextViewTableHeader);
+            head.addView(dayH);
+            TextView condH = new TextView(context);
+            condH.setLayoutParams(rp);
+            condH.setText("Weather");
             condH.setTextAppearance(context, R.style.TextViewTableHeader);
-                head.addView(condH);
-                TextView hiH = new TextView(context);
-                hiH.setLayoutParams(rp);
-                hiH.setText("High");
+            head.addView(condH);
+            TextView hiH = new TextView(context);
+            hiH.setLayoutParams(rp);
+            hiH.setText("High");
             hiH.setTextAppearance(context, R.style.TextViewTableHeader);
-                head.addView(hiH);
-                TextView loH = new TextView(context);
-                loH.setLayoutParams(rp);
-                loH.setText("Low");
+            head.addView(hiH);
+            TextView loH = new TextView(context);
+            loH.setLayoutParams(rp);
+            loH.setText("Low");
             loH.setTextAppearance(context, R.style.TextViewTableHeader);
-                head.addView(loH);
-                fcTable.addView(head);
+            head.addView(loH);
+            fcTable.addView(head);
             for (int i=0 ; i<forecast.length() ; i++) {
                 // Initialize row
                 TableRow row = new TableRow(context);
@@ -199,54 +341,9 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             fcTable.setColumnStretchable(1, true);
             fcTable.setColumnStretchable(2, true);
             weatherLayout.addView(fcTable);
-
         } catch (JSONException e) {
-            // oops
-            Log.d("WON", "onPostExecute() - JSONException ");
+            Log.e("WON", "displayWeatherInLayout() - JSONException ");
             e.printStackTrace();
-        }
-        // Hide progress activity circle
-        progress.setVisibility(View.GONE);
-    }
-
-    // Given a URL, establishes an HttpUrlConnection and retrieves
-    // the web page content as an InputStream, which it returns as
-    // a string.
-    private String getWeatherData(String myurl) throws IOException {
-        InputStream is = null;
-        String result = null;
-
-        try {
-            URL url = new URL(myurl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setReadTimeout(10000 /* milliseconds */);
-            conn.setConnectTimeout(15000 /* milliseconds */);
-            conn.setRequestMethod("GET");
-            conn.setDoInput(true);
-            // Starts the query
-            conn.connect();
-            int response = conn.getResponseCode();
-            Log.d("WON", "The response code is: " + response);
-            is = conn.getInputStream();
-
-            // json is UTF-8 by default
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"), 8);
-            StringBuilder sb = new StringBuilder();
-
-            String line = null;
-            while ((line = reader.readLine()) != null)
-            {
-                sb.append(line + "\n");
-            }
-            result = sb.toString();
-            return result;
-
-            // Makes sure that the InputStream is closed after the app is
-            // finished using it.
-        } finally {
-            if (is != null) {
-                is.close();
-            }
         }
     }
 

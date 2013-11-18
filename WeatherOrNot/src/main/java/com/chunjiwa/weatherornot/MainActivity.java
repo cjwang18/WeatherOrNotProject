@@ -20,7 +20,6 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
@@ -31,7 +30,7 @@ import java.util.regex.Pattern;
 public class MainActivity extends Activity {
 
     // Variables
-    private String locationQuery;
+    //private String locationQuery;
     private String locationType;
     private String tempUnitSelected;
     private String tempUnitSelectTitle;
@@ -49,7 +48,7 @@ public class MainActivity extends Activity {
         }
 
         // Initialize Variables
-        locationQuery = null;
+        //locationQuery = null;
         locationType = null;
         tempUnitSelected = "f";
         tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_default);
@@ -93,6 +92,7 @@ public class MainActivity extends Activity {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
+
         int id = item.getItemId();
         switch (id) {
             case R.id.fUnitSelect:
@@ -101,10 +101,7 @@ public class MainActivity extends Activity {
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
                 //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
-                if (locationQuery != null) {
-                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
-                    searchView.setQuery(locationQuery, true);
-                }
+                queryOnUnitChange();
                 break;
             case R.id.cUnitSelect:
                 tempUnitSelected = "c";
@@ -112,10 +109,7 @@ public class MainActivity extends Activity {
                 Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
                 //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
                 invalidateOptionsMenu();
-                if (locationQuery != null) {
-                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
-                    searchView.setQuery(locationQuery, true);
-                }
+                queryOnUnitChange();
                 break;
             case R.id.action_share_to_facebook:
                 handleShareToFacebook();
@@ -146,25 +140,25 @@ public class MainActivity extends Activity {
      */
     private void handleSearchQuery(String query) {
         //Log.d("WON", "MainActivity - handleSearchQuery()");
-        locationQuery = query.trim();
+        WeatherOrNotApplication wonApp = (WeatherOrNotApplication) getApplication();
+        wonApp.setLocationQuery(query.trim());
         //Log.d("WON", "User typed in: " + locationQuery);
         //use the query to search your data somehow
         if (isOnline()) {
             // ok to fetch data
-            if (determineLocationType(locationQuery)) {
+            if (determineLocationType(wonApp.getLocationQuery())) {
                 // passed validation and location type determination
                 // proceed in making request
                 //Log.d("WON", "handleSearchQuery() - passed validation and location type determination");
                 searchMenuItem.collapseActionView();
                 try {
-                    String queryParams = "?location=" + URLEncoder.encode(locationQuery, "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
+                    String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
                     String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
                     progress.setVisibility(View.VISIBLE);
-                    TextView text = (TextView) findViewById(R.id.status_text);
                     LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
-                    new GetWeatherTask(progress, text, weather, this).execute(queryURI);
+                    new GetWeatherTask(progress, weather, this).execute(queryURI);
                 } catch (UnsupportedEncodingException e) {
                     Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
                     return;
@@ -204,23 +198,14 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Helper function to check
-     * network status of device
-     */
-    private boolean isOnline() {
-        ConnectivityManager cm =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        return netInfo != null && netInfo.isConnectedOrConnecting();
-    }
-
-    /**
      * Validation function that also
      * determines the location type
      * from the inputted search query
      */
     private boolean determineLocationType(String location) {
         // Don't need to worry if 'location' string is empty; handled by Android
+
+        WeatherOrNotApplication wonApp = (WeatherOrNotApplication) getApplication();
 
         //String[] spaceSplit = location.split(" ");
         String[] commaSplit = location.split(",");
@@ -233,19 +218,19 @@ public class MainActivity extends Activity {
             } else if (location.length() != 5 && location.matches("^\\d+$")) {
                 // invalid ZIP code - too many digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - too many digits");
-                locationQuery = null;
+                wonApp.setLocationQuery(null);
                 Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
                 return false;
             } else if (location.length() == 5 && !location.matches("^\\d+$")) {
                 // invalid ZIP code - not all digits
                 //Log.d("WON", "determineLocationType() - invalid ZIP - not all digits");
-                locationQuery = null;
+                wonApp.setLocationQuery(null);
                 Toast.makeText(getBaseContext(), R.string.validation_invalidZip, Toast.LENGTH_SHORT).show();
                 return false;
             } else { // else, invalid zip code or location
                 // invalid LOCATION format
                 //Log.d("WON", "determineLocationType() - invalid LOCATION format");
-                locationQuery = null;
+                wonApp.setLocationQuery(null);
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -255,7 +240,7 @@ public class MainActivity extends Activity {
             Matcher m1 = p1.matcher(location);
             if (m1.find()) {
                 //Log.d("WON", "determineLocationType() - illegal characters detected");
-                locationQuery = null;
+                wonApp.setLocationQuery(null);
                 Toast.makeText(getBaseContext(), R.string.validation_illegalCharacters, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -265,7 +250,7 @@ public class MainActivity extends Activity {
             Matcher m2 = p2.matcher(temp);
             if (!m2.find()) {
                 //Log.d("WON", "determineLocationType() - invalid LOCATION format");
-                locationQuery = null;
+                wonApp.setLocationQuery(null);
                 Toast.makeText(getBaseContext(), R.string.validation_invalidLocation, Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -274,6 +259,32 @@ public class MainActivity extends Activity {
         }
 
         return true;
+    }
+
+    /**
+     * Helper function to check
+     * network status of device
+     */
+    private boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    /**
+     * Helper function to re-query
+     * for weather results if unit
+     * was changed with a valid
+     * location query
+     */
+    private void queryOnUnitChange() {
+        WeatherOrNotApplication wonApp = (WeatherOrNotApplication) getApplication();
+        String locationQuery = wonApp.getLocationQuery();
+        if (locationQuery != null) {
+            SearchView searchView = (SearchView) searchMenuItem.getActionView();
+            searchView.setQuery(locationQuery, true);
+        }
     }
 
 }
