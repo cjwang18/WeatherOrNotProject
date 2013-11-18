@@ -13,14 +13,6 @@
         android:id="@+id/action_tempUnitSelect"
         android:title="@string/action_tempUnitSelect_default"
         android:showAsAction="ifRoom" >
-        <menu>
-            <item
-                android:id="@+id/fUnitSelect"
-                android:title="&#xb0;F" />
-            <item
-                android:id="@+id/cUnitSelect"
-                android:title="&#xb0;C" />
-        </menu>
     </item>
 
     <item

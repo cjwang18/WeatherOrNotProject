@@ -95,19 +95,14 @@ public class MainActivity extends Activity {
 
         int id = item.getItemId();
         switch (id) {
-            case R.id.fUnitSelect:
-                tempUnitSelected = "f";
-                tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_f);
-                Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
-                //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
-                invalidateOptionsMenu();
-                queryOnUnitChange();
-                break;
-            case R.id.cUnitSelect:
-                tempUnitSelected = "c";
-                tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_c);
-                Toast.makeText(getBaseContext(), "Temp Unit: " + tempUnitSelectTitle, Toast.LENGTH_SHORT).show();
-                //Log.d("WON", "MainActivity - tempUnitSelected: " + tempUnitSelected);
+            case R.id.action_tempUnitSelect:
+                if (tempUnitSelected.equals("f")) {
+                    tempUnitSelected = "c";
+                    tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_c);
+                } else {
+                    tempUnitSelected = "f";
+                    tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_f);
+                }
                 invalidateOptionsMenu();
                 queryOnUnitChange();
                 break;
