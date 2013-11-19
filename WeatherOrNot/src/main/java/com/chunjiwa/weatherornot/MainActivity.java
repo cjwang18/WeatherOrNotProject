@@ -152,6 +152,7 @@ public class MainActivity extends Activity {
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
                     progress.setVisibility(View.VISIBLE);
+                    progress.bringToFront();
                     LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
                     new GetWeatherTask(progress, weather, this).execute(queryURI);
                 } catch (UnsupportedEncodingException e) {
@@ -181,11 +182,13 @@ public class MainActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 // 'which' parameter contains index position of selected item
                 Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
-                //postCurrentWeather();
-                Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
-                Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
-                shareToFbIntent.putExtra("which", which);
-                MainActivity.this.startActivity(shareToFbIntent);
+                //Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
+                // Optimization: only start new activity if real intent to share
+                if (which != 2) {
+                    Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);
+                    shareToFbIntent.putExtra("which", which);
+                    MainActivity.this.startActivity(shareToFbIntent);
+                }
             }
         });
         AlertDialog alert = builder.create();

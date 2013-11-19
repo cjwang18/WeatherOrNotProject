@@ -230,6 +230,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             tvCity.setText(city);
             tvCity.setTextAppearance(context, R.style.TextViewHeader1);
             tvCity.setGravity(Gravity.CENTER);
+            tvCity.setPadding(0, 0, 0, 10);
             weatherLayout.addView(tvCity);
 
             // Location - (Region, ) Country
@@ -245,11 +246,12 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
 
             // Condition Img
             ImageView ivCond = new ImageView(context);
-            ivCond.setLayoutParams(lp);
+            LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            imgLp.setMargins(0, 35, 0, 30);
+            ivCond.setLayoutParams(imgLp);
             new GetBitmap(ivCond).execute(img);
-            ivCond.setScaleX(1.5f);
-            ivCond.setScaleY(1.5f);
-            ivCond.setPadding(0, 20, 0, 20);
+            ivCond.setScaleX(2.0f);
+            ivCond.setScaleY(2.0f);
             weatherLayout.addView(ivCond);
 
             // Condition Text
@@ -258,6 +260,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             tvCondText.setText(condText);
             tvCondText.setTextAppearance(context, R.style.TextViewMedium);
             tvCondText.setGravity(Gravity.CENTER);
+            tvCondText.setPadding(0, 0, 0, 10);
             weatherLayout.addView(tvCondText);
 
             // Condition Temp
@@ -272,9 +275,9 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             TextView fcLabel = new TextView(context);
             fcLabel.setLayoutParams(lp);
             fcLabel.setText("Forecast");
-            //fcLabel.setTextAppearance(context, R.style.TextViewNormal);
+            fcLabel.setTextAppearance(context, R.style.TextViewTableLabel);
             fcLabel.setGravity(Gravity.CENTER);
-            fcLabel.setPadding(0, 20, 0, 0);
+            fcLabel.setPadding(0, 40, 0, 20);
             weatherLayout.addView(fcLabel);
 
             // Forecast Table
