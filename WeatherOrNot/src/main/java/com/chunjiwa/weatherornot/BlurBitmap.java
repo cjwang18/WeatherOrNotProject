@@ -3,17 +3,18 @@ package com.chunjiwa.weatherornot;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
 import android.widget.ImageView;
 
+import java.util.TimerTask;
+
 /**
  * Created by CJ Wang on 11/21/13.
  */
-public class BlurBitmap extends AsyncTask<Void, Void, Bitmap> {
+public class BlurBitmap extends TimerTask {
 
     private final Context context;
     private final ImageView imageView;
@@ -25,14 +26,16 @@ public class BlurBitmap extends AsyncTask<Void, Void, Bitmap> {
         this.blurRadius = blurRadius;
     }
 
-    @Override
-    protected Bitmap doInBackground(Void... voids) {
-        return createBlurredImage(imageView, blurRadius);
-    }
-
-    @Override
-    protected void onPostExecute(Bitmap bmp) {
-        imageView.setImageBitmap(bmp);
+    public void run() {
+        new Thread(new Runnable() {
+            public void run() {
+                imageView.post(new Runnable() {
+                    public void run() {
+                        imageView.setImageBitmap(createBlurredImage(imageView, blurRadius));
+                    }
+                });
+            }
+        }).start();
     }
 
     private Bitmap createBlurredImage (ImageView iv, float radius)

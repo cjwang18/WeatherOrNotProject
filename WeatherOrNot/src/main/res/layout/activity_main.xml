@@ -10,6 +10,6 @@
         android:id="@+id/backgroundImg"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:src="@drawable/night_sky_crop"
+        android:src="@drawable/clouds_crop"
         android:scaleType="fitXY" />
 </FrameLayout>

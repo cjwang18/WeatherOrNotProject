@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Timer;
 
 /**
  * Created by cjwang on 11/10/13.
@@ -31,6 +32,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     // Variables
     private final ProgressBar progress;
     private final LinearLayout weatherLayout;
+    private final Timer blurTimer;
     private final Context context;
     private final LinearLayout.LayoutParams lp;
     private final TableLayout.LayoutParams tp;
@@ -39,9 +41,10 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     /**
      * Constructor
      */
-    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final Context context) {
+    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final Timer blurTimer, final Context context) {
         this.progress = progress;
         this.weatherLayout = weather;
+        this.blurTimer = blurTimer;
         this.context = context;
 
         // Set default layout width and height parameters
@@ -96,6 +99,8 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
         }
         // Hide progress activity circle
         progress.setVisibility(View.GONE);
+        // Stop blurring
+        blurTimer.cancel();
     }
 
     /**

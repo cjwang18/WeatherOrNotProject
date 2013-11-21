@@ -7,13 +7,10 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
@@ -34,6 +31,8 @@ import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -160,14 +159,24 @@ public class MainActivity extends Activity {
                     String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
                     String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
+                    // Progress Circle - enable on emulator, disable on device
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
-                    progress.setVisibility(View.VISIBLE);
+                    //progress.setVisibility(View.VISIBLE);
                     progress.bringToFront();
+                    // Weather Layout
                     LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
-                    new GetWeatherTask(progress, weather, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, queryURI);
+                    // Blur effect - enable timer on device, disable timer on emulator
                     ImageView bg = (ImageView) findViewById(R.id.backgroundImg);
-                    //bg.setImageBitmap(createBlurredImage(bg, 25));
-                    new BlurBitmap(this, bg, 10).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                    Timer blurTimer = new Timer();
+                        // Enable timer on device
+                        BlurBitmap bit = new BlurBitmap(this, bg, 4);
+                        blurTimer.schedule(bit, 0, 250);
+                        /*// Disable timer on emulator
+                        BlurBitmap bit = new BlurBitmap(this, bg, 25);
+                        blurTimer.schedule(bit, 0);*/
+
+                    new GetWeatherTask(progress, weather, blurTimer, this).execute(queryURI);
+
                 } catch (UnsupportedEncodingException e) {
                     Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
                     return;
@@ -297,5 +306,56 @@ public class MainActivity extends Activity {
             searchView.setQuery(locationQuery, true);
         }
     }
+
+    private class blurImageTask extends TimerTask {
+
+        private final Context context;
+        private final ImageView iv;
+        private final float radius;
+
+        public blurImageTask(final Context context, final ImageView iv, final float radius) {
+            this.context = context;
+            this.iv = iv;
+            this.radius = radius;
+        }
+
+        public void run() {
+            iv.setImageBitmap(blurImage(iv, radius));
+        }
+
+        private Bitmap blurImage (ImageView iv, float radius)
+        {
+            // Load a clean bitmap and work from that.
+            Bitmap originalBitmap = ((BitmapDrawable)iv.getDrawable()).getBitmap();
+
+            // Create another bitmap that will hold the results of the filter.
+            Bitmap blurredBitmap;
+            blurredBitmap = Bitmap.createBitmap(originalBitmap);
+
+            // Create the Renderscript instance that will do the work.
+            RenderScript rs = RenderScript.create(context);
+
+            // Allocate memory for Renderscript to work with
+            Allocation input = Allocation.createFromBitmap(rs, originalBitmap);
+            Allocation output = Allocation.createTyped(rs, input.getType());
+
+            // Load up an instance of the specific script that we want to use.
+            ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+            script.setInput(input);
+
+            // Set the blur radius
+            script.setRadius(radius);
+
+            // Start the ScriptIntrinisicBlur
+            script.forEach(output);
+
+            // Copy the output to the blurred bitmap
+            output.copyTo(blurredBitmap);
+
+            return blurredBitmap;
+        }
+    }
+
+
 
 }
