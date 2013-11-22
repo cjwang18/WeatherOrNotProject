@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -165,11 +166,15 @@ public class MainActivity extends Activity {
                     progress.bringToFront();
                     // Weather Layout
                     LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
+                    weather.setAlpha(0f);
+                    weather.removeAllViews();
+
                     // Blur effect - enable timer on device, disable timer on emulator
                     ImageView bg = (ImageView) findViewById(R.id.backgroundImg);
+                    bg.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.clouds_crop));
                     Timer blurTimer = new Timer();
                         // Enable timer on device
-                        BlurBitmap bit = new BlurBitmap(this, bg, 4);
+                        BlurBitmap bit = new BlurBitmap(this, bg, 7);
                         blurTimer.schedule(bit, 0, 250);
                         /*// Disable timer on emulator
                         BlurBitmap bit = new BlurBitmap(this, bg, 25);

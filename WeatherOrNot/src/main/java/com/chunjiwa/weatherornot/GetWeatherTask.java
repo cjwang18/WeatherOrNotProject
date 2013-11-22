@@ -97,10 +97,17 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
                 e.printStackTrace();
             }
         }
+        weatherLayout.setAlpha(0f);
+        // Animate in weatherLayout
+        weatherLayout.animate()
+                .alpha(1f)
+                .setDuration(context.getResources().getInteger(android.R.integer.config_mediumAnimTime))
+                .setListener(null);
         // Hide progress activity circle
         progress.setVisibility(View.GONE);
         // Stop blurring
         blurTimer.cancel();
+
     }
 
     /**
