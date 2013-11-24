@@ -39,7 +39,27 @@ public class GetBitmap extends AsyncTask<String, Void, Bitmap> {
 
     @Override
     protected void onPostExecute(Bitmap bmp) {
-        imageView.setImageBitmap(bmp);
+        imageView.setImageBitmap(eraseBG(bmp, -1));
+    }
+
+    private static Bitmap eraseBG(Bitmap src, int color) {
+        int width = src.getWidth();
+        int height = src.getHeight();
+        Bitmap b = src.copy(Bitmap.Config.ARGB_8888, true);
+        b.setHasAlpha(true);
+
+        int[] pixels = new int[width * height];
+        src.getPixels(pixels, 0, width, 0, 0, width, height);
+
+        for (int i = 0; i < width * height; i++) {
+            if (pixels[i] == color) {
+                pixels[i] = 0;
+            }
+        }
+
+        b.setPixels(pixels, 0, width, 0, 0, width, height);
+
+        return b;
     }
 
 }

@@ -177,9 +177,10 @@ public class MainActivity extends Activity {
                                 .setDuration(this.getResources().getInteger(android.R.integer.config_shortAnimTime))
                                 .setListener(null);
                     }
-                    queryOnUnitChange = false;
 
                     new GetWeatherTask(progress, weather, queryOnUnitChange, this).execute(queryURI);
+
+                    queryOnUnitChange = false;
 
                 } catch (UnsupportedEncodingException e) {
                     Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
