@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -32,7 +31,6 @@ import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,11 +38,11 @@ import java.util.regex.Pattern;
 public class MainActivity extends Activity {
 
     // Variables
-    //private String locationQuery;
     private String locationType;
     private String tempUnitSelected;
     private String tempUnitSelectTitle;
     private MenuItem searchMenuItem;
+    private boolean queryOnUnitChange;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,10 +56,10 @@ public class MainActivity extends Activity {
         }
 
         // Initialize Variables
-        //locationQuery = null;
         locationType = null;
         tempUnitSelected = "f";
         tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_default);
+        queryOnUnitChange = false;
 
         Log.d("WON", "MainActivity - onCreate()");
     }
@@ -160,27 +158,28 @@ public class MainActivity extends Activity {
                     String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
                     String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
+
                     // Progress Circle - enable on emulator, disable on device
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
-                    //progress.setVisibility(View.VISIBLE);
+                    progress.setAlpha(0f);
+                    progress.setVisibility(View.VISIBLE);
                     progress.bringToFront();
+                    progress.animate()
+                            .alpha(1f)
+                            .setDuration(this.getResources().getInteger(android.R.integer.config_shortAnimTime))
+                            .setListener(null);
+
                     // Weather Layout
-                    LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
-                    weather.setAlpha(0f);
-                    weather.removeAllViews();
+                    final LinearLayout weather = (LinearLayout) findViewById(R.id.weatherLayout);
+                    if (!queryOnUnitChange) {
+                        weather.animate()
+                                .alpha(0f)
+                                .setDuration(this.getResources().getInteger(android.R.integer.config_shortAnimTime))
+                                .setListener(null);
+                    }
+                    queryOnUnitChange = false;
 
-                    // Blur effect - enable timer on device, disable timer on emulator
-                    ImageView bg = (ImageView) findViewById(R.id.backgroundImg);
-                    bg.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.clouds_crop));
-                    Timer blurTimer = new Timer();
-                        // Enable timer on device
-                        BlurBitmap bit = new BlurBitmap(this, bg, 7);
-                        blurTimer.schedule(bit, 0, 250);
-                        /*// Disable timer on emulator
-                        BlurBitmap bit = new BlurBitmap(this, bg, 25);
-                        blurTimer.schedule(bit, 0);*/
-
-                    new GetWeatherTask(progress, weather, blurTimer, this).execute(queryURI);
+                    new GetWeatherTask(progress, weather, queryOnUnitChange, this).execute(queryURI);
 
                 } catch (UnsupportedEncodingException e) {
                     Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
@@ -308,6 +307,7 @@ public class MainActivity extends Activity {
         String locationQuery = wonApp.getLocationQuery();
         if (locationQuery != null) {
             SearchView searchView = (SearchView) searchMenuItem.getActionView();
+            queryOnUnitChange = true;
             searchView.setQuery(locationQuery, true);
         }
     }

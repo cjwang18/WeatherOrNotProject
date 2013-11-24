@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Timer;
 
 /**
  * Created by cjwang on 11/10/13.
@@ -32,7 +31,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     // Variables
     private final ProgressBar progress;
     private final LinearLayout weatherLayout;
-    private final Timer blurTimer;
+    private final boolean queryOnUnitChange;
     private final Context context;
     private final LinearLayout.LayoutParams lp;
     private final TableLayout.LayoutParams tp;
@@ -41,10 +40,10 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     /**
      * Constructor
      */
-    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final Timer blurTimer, final Context context) {
+    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final boolean queryOnUnitChange, final Context context) {
         this.progress = progress;
         this.weatherLayout = weather;
-        this.blurTimer = blurTimer;
+        this.queryOnUnitChange = queryOnUnitChange;
         this.context = context;
 
         // Set default layout width and height parameters
@@ -97,17 +96,21 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
                 e.printStackTrace();
             }
         }
-        weatherLayout.setAlpha(0f);
-        // Animate in weatherLayout
-        weatherLayout.animate()
-                .alpha(1f)
-                .setDuration(context.getResources().getInteger(android.R.integer.config_mediumAnimTime))
-                .setListener(null);
-        // Hide progress activity circle
-        progress.setVisibility(View.GONE);
-        // Stop blurring
-        blurTimer.cancel();
 
+        if (!queryOnUnitChange) {
+            weatherLayout.setAlpha(0f);
+            weatherLayout.setVisibility(View.VISIBLE);
+            // Animate in weatherLayout
+            weatherLayout.animate()
+                    .alpha(1f)
+                    .setDuration(context.getResources().getInteger(android.R.integer.config_shortAnimTime))
+                    .setListener(null);
+        }
+        // Animate out the progress activity circle
+        progress.animate()
+                .alpha(0f)
+                .setDuration(context.getResources().getInteger(android.R.integer.config_shortAnimTime))
+                .setListener(null);
     }
 
     /**
