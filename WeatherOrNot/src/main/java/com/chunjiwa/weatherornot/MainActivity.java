@@ -159,6 +159,9 @@ public class MainActivity extends Activity {
                     String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
 
+                    // Background ImageView
+                    ImageView bg = (ImageView) findViewById(R.id.backgroundImg);
+
                     // Progress Circle - enable on emulator, disable on device
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);
                     progress.setAlpha(0f);
@@ -178,7 +181,7 @@ public class MainActivity extends Activity {
                                 .setListener(null);
                     }
 
-                    new GetWeatherTask(progress, weather, queryOnUnitChange, this).execute(queryURI);
+                    new GetWeatherTask(bg, progress, weather, queryOnUnitChange, this).execute(queryURI);
 
                     queryOnUnitChange = false;
 

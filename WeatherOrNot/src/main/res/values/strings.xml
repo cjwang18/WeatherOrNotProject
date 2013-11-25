@@ -21,5 +21,7 @@
         <item>Post Weather Forecast</item>
         <item>Cancel</item>
     </string-array>
+    <string name="day_theme_bg">R.drawable.clouds_crop</string>
+    <string name="night_theme_bg">R.drawable.night_sky_crop</string>
 
 </resources>

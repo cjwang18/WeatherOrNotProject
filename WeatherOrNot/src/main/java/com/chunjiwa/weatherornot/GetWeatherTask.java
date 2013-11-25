@@ -1,7 +1,9 @@
 package com.chunjiwa.weatherornot;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -22,6 +24,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static android.text.format.Time.compare;
 
 /**
  * Created by cjwang on 11/10/13.
@@ -29,10 +39,12 @@ import java.net.URL;
 class GetWeatherTask extends AsyncTask<String, String, String> {
 
     // Variables
+    private final ImageView bg;
     private final ProgressBar progress;
     private final LinearLayout weatherLayout;
     private final boolean queryOnUnitChange;
     private final Context context;
+    private boolean dayOrNight; // true for Day, false for Night
     private final LinearLayout.LayoutParams lp;
     private final TableLayout.LayoutParams tp;
     private final TableRow.LayoutParams rp;
@@ -40,11 +52,13 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     /**
      * Constructor
      */
-    public GetWeatherTask(final ProgressBar progress, final LinearLayout weather, final boolean queryOnUnitChange, final Context context) {
+    public GetWeatherTask(final ImageView bg, final ProgressBar progress, final LinearLayout weather, final boolean queryOnUnitChange, final Context context) {
+        this.bg = bg;
         this.progress = progress;
         this.weatherLayout = weather;
         this.queryOnUnitChange = queryOnUnitChange;
         this.context = context;
+        this.dayOrNight = true;
 
         // Set default layout width and height parameters
         lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -96,6 +110,11 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
                 e.printStackTrace();
             }
         }
+
+        if (dayOrNight)
+            bg.setImageBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.clouds_crop));
+        else
+            bg.setImageBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.night_sky_crop));
 
         if (!queryOnUnitChange) {
             weatherLayout.setAlpha(0f);
@@ -234,7 +253,11 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             String unit = weather.getJSONObject("units").getString("@temperature");
             JSONArray forecast = weather.getJSONArray("forecast");
 
-            //Log.i("WON", "displayWeatherInLayout() - forecast: " + forecast);
+            // Determine dayOrNight at query location
+            String lastBuildDate = weather.getString("lastBuildDate"); // "Sun, 24 Nov 2013 12:55 pm PST"
+            String sunrise = weather.getJSONObject("astronomy").getString("@sunrise"); // "6:31 am"
+            String sunset = weather.getJSONObject("astronomy").getString("@sunset"); // "4:43 pm"
+            dayOrNight = determineDayOrNight(lastBuildDate, sunrise, sunset);
 
             // Reset weatherLayout
             resetWeatherLayout();
@@ -363,6 +386,74 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             Log.e("WON", "displayWeatherInLayout() - JSONException ");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Function that determines if it is
+     * day or night at the query location
+     */
+    private boolean determineDayOrNight(String lastBuildDate, String sunrise, String sunset) {
+        boolean temp = true;
+
+        // Set up time parser
+        SimpleDateFormat sdf  = new SimpleDateFormat("h:m a");
+
+        // Only need time from lastBuildDate
+        Pattern pattern = Pattern.compile("([1-9]|1[0-2]|0[1-9])(:[0-5][0-9] [aApP][mM]){1}");
+        Matcher matcher = pattern.matcher(lastBuildDate);
+        if (matcher.find())
+            lastBuildDate = matcher.group();
+
+        try {
+            // Parse lastBuildDate, sunrise, sunset and convert to Time objects
+            Date cLastBuildDate = sdf.parse(lastBuildDate);
+            Date cSunrise = sdf.parse(sunrise);
+            Date cSunset = sdf.parse(sunset);
+            //Log.d("WON", "cLastBuildDate: " + cLastBuildDate.getTime() + " sunrise: " + cSunrise.getTime() + " sunset: " + cSunset.getTime());
+            Calendar cal = Calendar.getInstance();
+
+            cal.setTime(cLastBuildDate);
+            Time lastBuildTime = new Time();
+            lastBuildTime.set(cal.get(Calendar.SECOND),
+                    cal.get(Calendar.MINUTE),
+                    cal.get(Calendar.HOUR_OF_DAY),
+                    cal.get(Calendar.DAY_OF_MONTH),
+                    cal.get(Calendar.MONTH),
+                    cal.get(Calendar.YEAR));
+            //Log.d("WON", "lastBuildTime: " + lastBuildTime.toString());
+
+            cal.setTime(cSunrise);
+            Time sunriseTime = new Time();
+            sunriseTime.set(cal.get(Calendar.SECOND),
+                    cal.get(Calendar.MINUTE),
+                    cal.get(Calendar.HOUR_OF_DAY),
+                    cal.get(Calendar.DAY_OF_MONTH),
+                    cal.get(Calendar.MONTH),
+                    cal.get(Calendar.YEAR));
+            //Log.d("WON", "sunriseTime: " + sunriseTime.toString());
+
+            cal.setTime(cSunset);
+            Time sunsetTime = new Time();
+            sunsetTime.set(cal.get(Calendar.SECOND),
+                    cal.get(Calendar.MINUTE),
+                    cal.get(Calendar.HOUR_OF_DAY),
+                    cal.get(Calendar.DAY_OF_MONTH),
+                    cal.get(Calendar.MONTH),
+                    cal.get(Calendar.YEAR));
+            //Log.d("WON", "sunsetTime: " + sunsetTime.toString());
+
+            if (compare(lastBuildTime, sunriseTime) >= 0 && compare(lastBuildTime, sunsetTime) <= 0) {
+                Log.i("WON", "determined DAY @ query location");
+                temp = true;
+            } else {
+                Log.i("WON", "determined NIGHT @ query location");
+                temp = false;
+            }
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return temp;
     }
 
 }
