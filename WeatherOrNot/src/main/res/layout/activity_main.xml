@@ -6,10 +6,25 @@
     tools:context=".MainActivity"
     tools:ignore="MergeRootFrame">
 
-    <ImageView
-        android:id="@+id/backgroundImg"
-        android:layout_height="match_parent"
+    <ViewSwitcher
+        android:id="@+id/backgroundImgViewSwitch"
         android:layout_width="match_parent"
-        android:src="@drawable/clouds_crop"
-        android:scaleType="fitXY" />
+        android:layout_height="match_parent"
+        android:inAnimation="@anim/abc_fade_in"
+        android:outAnimation="@anim/abc_fade_out">
+
+        <ImageView
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/clouds_crop" />
+
+        <ImageView
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/night_sky_crop" />
+
+    </ViewSwitcher>
+
 </FrameLayout>

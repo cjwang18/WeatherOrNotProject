@@ -28,6 +28,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
+import android.widget.ViewSwitcher;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -160,7 +161,7 @@ public class MainActivity extends Activity {
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
 
                     // Background ImageView
-                    ImageView bg = (ImageView) findViewById(R.id.backgroundImg);
+                    ViewSwitcher bg = (ViewSwitcher) findViewById(R.id.backgroundImgViewSwitch);
 
                     // Progress Circle - enable on emulator, disable on device
                     ProgressBar progress = (ProgressBar) findViewById(R.id.progress);

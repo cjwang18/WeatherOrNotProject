@@ -1,7 +1,6 @@
 package com.chunjiwa.weatherornot;
 
 import android.content.Context;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.text.format.Time;
 import android.util.Log;
@@ -13,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.ViewSwitcher;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,7 +39,7 @@ import static android.text.format.Time.compare;
 class GetWeatherTask extends AsyncTask<String, String, String> {
 
     // Variables
-    private final ImageView bg;
+    private final ViewSwitcher bg;
     private final ProgressBar progress;
     private final LinearLayout weatherLayout;
     private final boolean queryOnUnitChange;
@@ -52,7 +52,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     /**
      * Constructor
      */
-    public GetWeatherTask(final ImageView bg, final ProgressBar progress, final LinearLayout weather, final boolean queryOnUnitChange, final Context context) {
+    public GetWeatherTask(final ViewSwitcher bg, final ProgressBar progress, final LinearLayout weather, final boolean queryOnUnitChange, final Context context) {
         this.bg = bg;
         this.progress = progress;
         this.weatherLayout = weather;
@@ -80,6 +80,8 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     protected void onPostExecute(String result) {
         Log.d("WON", "onPostExecute() - result: " + result);
         if (result == null) {
+            displayGeneralErrorInLayout();
+        } else if (result == "Unable to retrieve data. URI may be invalid.") {
             displayGeneralErrorInLayout();
         } else {
             try {
@@ -111,10 +113,21 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             }
         }
 
-        if (dayOrNight)
-            bg.setImageBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.clouds_crop));
-        else
-            bg.setImageBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.night_sky_crop));
+        if (dayOrNight) {
+            if (bg.getDisplayedChild() == 0) {
+                // if DAY and currently showing DAY, do nothing
+            } else {
+                // if DAY and currently showing NIGHT, show previous
+                bg.showPrevious();
+            }
+        } else {
+            if (bg.getDisplayedChild() == 0) {
+                // if NIGHT and currently showing DAY, show next
+                bg.showNext();
+            } else {
+                // if NIGHT and currently showing NIGHT, do nothing
+            }
+        }
 
         if (!queryOnUnitChange) {
             weatherLayout.setAlpha(0f);
