@@ -265,7 +265,7 @@ public class MainActivity extends Activity {
             }
         } else { // else (if location.split's length > 1 => city, region, country format
             // test for illegal characters
-            Pattern p1 = Pattern.compile("[\"()*!@#$&=|;:?/.]");
+            Pattern p1 = Pattern.compile("[\"()*!@#$&=|;:?/]");
             Matcher m1 = p1.matcher(location);
             if (m1.find()) {
                 //Log.d("WON", "determineLocationType() - illegal characters detected");
@@ -275,7 +275,7 @@ public class MainActivity extends Activity {
             }
             String temp = location.replaceAll("['-]", " ");
             // test for pattern match
-            Pattern p2 = Pattern.compile("^(([a-zA-Z])+(\\s)*)+,(\\s)*(([a-zA-Z])+(\\s)*)+(,(\\s)*(([a-zA-Z])+(\\s)*)+)*$");
+            Pattern p2 = Pattern.compile("^(([a-zA-Z.])+(\\s)*)+,(\\s)*(([a-zA-Z.])+(\\s)*)+(,(\\s)*(([a-zA-Z.])+(\\s)*)+)*$");
             Matcher m2 = p2.matcher(temp);
             if (!m2.find()) {
                 //Log.d("WON", "determineLocationType() - invalid LOCATION format");

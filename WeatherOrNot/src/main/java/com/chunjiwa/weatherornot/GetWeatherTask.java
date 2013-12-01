@@ -394,6 +394,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             fcTable.setColumnStretchable(0, true);
             fcTable.setColumnStretchable(1, true);
             fcTable.setColumnStretchable(2, true);
+            fcTable.setColumnShrinkable(1, true);
             weatherLayout.addView(fcTable);
         } catch (JSONException e) {
             Log.e("WON", "displayWeatherInLayout() - JSONException ");
