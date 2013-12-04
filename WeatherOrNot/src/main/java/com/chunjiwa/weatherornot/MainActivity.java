@@ -7,15 +7,9 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -23,7 +17,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
@@ -32,7 +25,6 @@ import android.widget.ViewSwitcher;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -157,7 +149,7 @@ public class MainActivity extends Activity {
                 searchMenuItem.collapseActionView();
                 try {
                     String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
-                    String queryURI = "http://cs-server.usc.edu:11708/hw9/weatherSearch" + queryParams;
+                    String queryURI = "http://cs-server.usc.edu:11708/hw8/weatherSearch" + queryParams;
                     Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
 
                     // Background ImageView
@@ -316,56 +308,5 @@ public class MainActivity extends Activity {
             searchView.setQuery(locationQuery, true);
         }
     }
-
-    private class blurImageTask extends TimerTask {
-
-        private final Context context;
-        private final ImageView iv;
-        private final float radius;
-
-        public blurImageTask(final Context context, final ImageView iv, final float radius) {
-            this.context = context;
-            this.iv = iv;
-            this.radius = radius;
-        }
-
-        public void run() {
-            iv.setImageBitmap(blurImage(iv, radius));
-        }
-
-        private Bitmap blurImage (ImageView iv, float radius)
-        {
-            // Load a clean bitmap and work from that.
-            Bitmap originalBitmap = ((BitmapDrawable)iv.getDrawable()).getBitmap();
-
-            // Create another bitmap that will hold the results of the filter.
-            Bitmap blurredBitmap;
-            blurredBitmap = Bitmap.createBitmap(originalBitmap);
-
-            // Create the Renderscript instance that will do the work.
-            RenderScript rs = RenderScript.create(context);
-
-            // Allocate memory for Renderscript to work with
-            Allocation input = Allocation.createFromBitmap(rs, originalBitmap);
-            Allocation output = Allocation.createTyped(rs, input.getType());
-
-            // Load up an instance of the specific script that we want to use.
-            ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-            script.setInput(input);
-
-            // Set the blur radius
-            script.setRadius(radius);
-
-            // Start the ScriptIntrinisicBlur
-            script.forEach(output);
-
-            // Copy the output to the blurred bitmap
-            output.copyTo(blurredBitmap);
-
-            return blurredBitmap;
-        }
-    }
-
-
 
 }
