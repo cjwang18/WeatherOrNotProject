@@ -16,7 +16,8 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
-        android:name=".WeatherOrNotApplication">
+        android:name=".WeatherOrNotApplication"
+        android:debuggable="false">
         <activity
             android:name="com.chunjiwa.weatherornot.MainActivity"
             android:label="@string/app_name"

@@ -27,10 +27,10 @@ public class GetBitmap extends AsyncTask<String, Void, Bitmap> {
             URL bmpUrl = new URL(url[0]);
             return BitmapFactory.decodeStream(bmpUrl.openConnection().getInputStream());
         } catch (MalformedURLException e) {
-            Log.d("WON", "GetBitmap - doInBackground() - MalformedURLException");
+            Log.e("WON", "GetBitmap - doInBackground() - MalformedURLException");
             e.printStackTrace();
         } catch (IOException e) {
-            Log.d("WON", "GetBitmap - doInBackground() - IOException");
+            Log.e("WON", "GetBitmap - doInBackground() - IOException");
             e.printStackTrace();
         }
 

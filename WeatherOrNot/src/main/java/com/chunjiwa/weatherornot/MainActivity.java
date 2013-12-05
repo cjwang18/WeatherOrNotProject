@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         tempUnitSelectTitle = getResources().getString(R.string.action_tempUnitSelect_default);
         queryOnUnitChange = false;
 
-        Log.d("WON", "MainActivity - onCreate()");
+        //Log.d("WON", "MainActivity - onCreate()");
     }
 
     @Override
@@ -150,7 +150,7 @@ public class MainActivity extends Activity {
                 try {
                     String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
                     String queryURI = "http://cs-server.usc.edu:11708/hw8/weatherSearch" + queryParams;
-                    Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
+                    //Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
 
                     // Background ImageView
                     ViewSwitcher bg = (ViewSwitcher) findViewById(R.id.backgroundImgViewSwitch);
@@ -179,12 +179,12 @@ public class MainActivity extends Activity {
                     queryOnUnitChange = false;
 
                 } catch (UnsupportedEncodingException e) {
-                    Log.d("WON", "handleSearchQuery() - Unsupported Encoding Exception");
+                    Log.e("WON", "handleSearchQuery() - Unsupported Encoding Exception");
                     return;
                 }
             } else {
                 // did not pass validation
-                Log.d("WON", "handleSearchQuery() - did not pass validation");
+                //Log.e("WON", "handleSearchQuery() - did not pass validation");
             }
         } else {
             // display no connectivity error
@@ -204,8 +204,7 @@ public class MainActivity extends Activity {
         builder.setItems(R.array.share_to_facebook_array, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 // 'which' parameter contains index position of selected item
-                Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
-                //Log.d("WON", "MainActivity - starting ShareToFacebookActivity");
+                //Log.d("WON", "handleShareToFacebook() - share_to_facebook_array[" + which + "]");
                 // Optimization: only start new activity if real intent to share
                 if (which != 2) {
                     Intent shareToFbIntent = new Intent(MainActivity.this, ShareToFacebookActivity.class);

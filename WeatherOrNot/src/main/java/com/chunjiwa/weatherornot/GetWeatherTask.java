@@ -78,7 +78,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
     // onPostExecute displays the results of the AsyncTask.
     @Override
     protected void onPostExecute(String result) {
-        Log.d("WON", "onPostExecute() - result: " + result);
+        //Log.d("WON", "onPostExecute() - result: " + result);
         if (result == null) {
             displayGeneralErrorInLayout();
         } else if (result == "Unable to retrieve data. URI may be invalid.") {
@@ -164,7 +164,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             // Starts the query
             conn.connect();
             int response = conn.getResponseCode();
-            Log.i("WON", "getWeatherData() - The response code is: " + response);
+            //Log.i("WON", "getWeatherData() - The response code is: " + response);
 
             if (response == 200) {
                 is = conn.getInputStream();
@@ -457,10 +457,10 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             //Log.d("WON", "sunsetTime: " + sunsetTime.toString());
 
             if (compare(lastBuildTime, sunriseTime) >= 0 && compare(lastBuildTime, sunsetTime) <= 0) {
-                Log.i("WON", "determined DAY @ query location");
+                //Log.i("WON", "determined DAY @ query location");
                 temp = true;
             } else {
-                Log.i("WON", "determined NIGHT @ query location");
+                //Log.i("WON", "determined NIGHT @ query location");
                 temp = false;
             }
 

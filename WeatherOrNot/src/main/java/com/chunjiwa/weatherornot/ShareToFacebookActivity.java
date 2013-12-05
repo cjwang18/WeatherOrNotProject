@@ -54,7 +54,7 @@ public class ShareToFacebookActivity extends Activity {
 
         Intent intent = getIntent();
         which = intent.getIntExtra("which", POST_CANCEL);
-        Log.d("WON", "ShareToFacebookActivity - onCreate(), which=" + which);
+        //Log.d("WON", "ShareToFacebookActivity - onCreate(), which=" + which);
 
         /*// Add code to print out the key hash
         try {
@@ -96,7 +96,6 @@ public class ShareToFacebookActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.share_to_facebook, menu);
         return true;
@@ -229,7 +228,7 @@ public class ShareToFacebookActivity extends Activity {
 
             return params;
         } catch (JSONException e) {
-            Log.d("WON", "ShareToFacebookActivity - buildFeedDialog() - JSONException");
+            Log.e("WON", "ShareToFacebookActivity - buildFeedDialog() - JSONException");
         }
 
         return null;
