@@ -148,8 +148,8 @@ public class MainActivity extends Activity {
                 //Log.d("WON", "handleSearchQuery() - passed validation and location type determination");
                 searchMenuItem.collapseActionView();
                 try {
-                    String queryParams = "?location=" + URLEncoder.encode(wonApp.getLocationQuery(), "UTF-8") + "&locType=" + locationType + "&unit=" + tempUnitSelected;
-                    String queryURI = "http://cs-server.usc.edu:11708/hw8/weatherSearch" + queryParams;
+                    String yql = "select * from weather.forecast where u=\"" + tempUnitSelected + "\" and woeid in (select woeid from geo.places where text=\"" + wonApp.getLocationQuery() + "\")";
+                    String queryURI = "http://query.yahooapis.com/v1/public/yql?q=" + URLEncoder.encode(yql, "UTF-8") + "&format=json";
                     //Log.d("WON", "handleSearchQuery() - queryURI: " + queryURI);
 
                     // Background ImageView

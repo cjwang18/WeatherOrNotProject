@@ -87,12 +87,13 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             try {
                 // Convert string into JSONObject
                 JSONObject jObject = new JSONObject(result);
-                JSONObject weather = jObject.getJSONObject("weather");
-                //Log.d("WON", "onPostExecute() - weather JSON: " + weather);
+                int count = jObject.getJSONObject("query").getInt("count");
 
                 // Check if returned JSON is valid weather data
                 WeatherOrNotApplication wonApp = (WeatherOrNotApplication) context.getApplicationContext();
-                if (weather.isNull("error")) {
+                if (count > 0) {
+                    JSONObject weather = jObject.getJSONObject("query").getJSONObject("results").getJSONArray("channel").getJSONObject(0);
+                    //Log.d("WON", "onPostExecute() - weather JSON: " + count + ", " + weather);
                     // Store weather JSON into application state
                     wonApp.setWeatherJSON(weather);
                     // Display weather results in layout
@@ -103,7 +104,13 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
                     // Clear weather JSON in application state
                     wonApp.setWeatherJSON(null);
                     // Display error message in layout
-                    displayErrorInLayout(weather);
+                    try {
+                        JSONObject error = new JSONObject();
+                        error.put("error", "No weather data for this location.");
+                        displayErrorInLayout(error);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
 
             } catch (JSONException e) {
@@ -257,19 +264,20 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
      */
     private void displayWeatherInLayout(JSONObject weather) {
         try {
-            String city = weather.getJSONObject("location").getString("@city");
-            String region = weather.getJSONObject("location").getString("@region");
-            String country = weather.getJSONObject("location").getString("@country");
-            String img = weather.getString("img");
-            String condText = weather.getJSONObject("condition").getString("@text");
-            String condTemp = weather.getJSONObject("condition").getString("@temp");
-            String unit = weather.getJSONObject("units").getString("@temperature");
-            JSONArray forecast = weather.getJSONArray("forecast");
+            String city = weather.getJSONObject("location").getString("city");
+            String region = weather.getJSONObject("location").getString("region");
+            String country = weather.getJSONObject("location").getString("country");
+            String condCode = weather.getJSONObject("item").getJSONObject("condition").getString("code");
+            String condTemp = weather.getJSONObject("item").getJSONObject("condition").getString("temp");
+            String condText = weather.getJSONObject("item").getJSONObject("condition").getString("text");
+            String img = "http://l.yimg.com/a/i/us/we/52/" + condCode + ".gif";
+            String unit = weather.getJSONObject("units").getString("temperature");
+            JSONArray forecast = weather.getJSONObject("item").getJSONArray("forecast");
 
             // Determine dayOrNight at query location
             String lastBuildDate = weather.getString("lastBuildDate"); // "Sun, 24 Nov 2013 12:55 pm PST"
-            String sunrise = weather.getJSONObject("astronomy").getString("@sunrise"); // "6:31 am"
-            String sunset = weather.getJSONObject("astronomy").getString("@sunset"); // "4:43 pm"
+            String sunrise = weather.getJSONObject("astronomy").getString("sunrise"); // "6:31 am"
+            String sunset = weather.getJSONObject("astronomy").getString("sunset"); // "4:43 pm"
             dayOrNight = determineDayOrNight(lastBuildDate, sunrise, sunset);
 
             // Reset weatherLayout
@@ -287,7 +295,7 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
             // Location - (Region, ) Country
             TextView tvCountry = new TextView(context);
             tvCountry.setLayoutParams(lp);
-            if (region.equals("N/A"))
+            if (region.equals(""))
                 tvCountry.setText(country);
             else
                 tvCountry.setText(region + ", " + country);
@@ -367,25 +375,25 @@ class GetWeatherTask extends AsyncTask<String, String, String> {
                 // @day
                 TextView day = new TextView(context);
                 day.setLayoutParams(rp);
-                day.setText(fcDay.getString("@day"));
+                day.setText(fcDay.getString("day"));
                 day.setTextAppearance(context, R.style.TextViewNormal);
                 row.addView(day);
                 // @text (condition)
                 TextView cond = new TextView(context);
                 cond.setLayoutParams(rp);
-                cond.setText(fcDay.getString("@text"));
+                cond.setText(fcDay.getString("text"));
                 cond.setTextAppearance(context, R.style.TextViewNormal);
                 row.addView(cond);
                 // @high
                 TextView hi = new TextView(context);
                 hi.setLayoutParams(rp);
-                hi.setText(fcDay.getString("@high") + (char) 0x00B0 + unit);
+                hi.setText(fcDay.getString("high") + (char) 0x00B0 + unit);
                 hi.setTextAppearance(context, R.style.ForecastHigh);
                 row.addView(hi);
                 // @low
                 TextView lo = new TextView(context);
                 lo.setLayoutParams(rp);
-                lo.setText(fcDay.getString("@low") + (char) 0x00B0 + unit);
+                lo.setText(fcDay.getString("low") + (char) 0x00B0 + unit);
                 lo.setTextAppearance(context, R.style.ForecastLow);
                 row.addView(lo);
                 // Add row to table

@@ -174,16 +174,16 @@ public class ShareToFacebookActivity extends Activity {
             return null;
         }
         try {
-            String city = weather.getJSONObject("location").getString("@city");
-            String region = weather.getJSONObject("location").getString("@region");
-            String country = weather.getJSONObject("location").getString("@country");
-            String feed = weather.getString("feed");
+            String city = weather.getJSONObject("location").getString("city");
+            String region = weather.getJSONObject("location").getString("region");
+            String country = weather.getJSONObject("location").getString("country");
             String link = weather.getString("link");
-            String img = weather.getString("img");
-            String condText = weather.getJSONObject("condition").getString("@text");
-            String condTemp = weather.getJSONObject("condition").getString("@temp");
-            String unit = weather.getJSONObject("units").getString("@temperature");
-            JSONArray forecast = weather.getJSONArray("forecast");
+            String condCode = weather.getJSONObject("item").getJSONObject("condition").getString("code");
+            String condTemp = weather.getJSONObject("item").getJSONObject("condition").getString("temp");
+            String condText = weather.getJSONObject("item").getJSONObject("condition").getString("text");
+            String img = "http://l.yimg.com/a/i/us/we/52/" + condCode + ".gif";
+            String unit = weather.getJSONObject("units").getString("temperature");
+            JSONArray forecast = weather.getJSONObject("item").getJSONArray("forecast");
 
             Bundle params = new Bundle();
 
@@ -192,7 +192,7 @@ public class ShareToFacebookActivity extends Activity {
                 params.putString("name", city + ", " + country);
             else
                 params.putString("name", city + ", " + region + ", " + country);
-            params.putString("link", feed);
+            params.putString("link", link);
             JSONObject properties = new JSONObject();
             JSONObject prop1 = new JSONObject();
             prop1.put("text", "here");
@@ -213,10 +213,10 @@ public class ShareToFacebookActivity extends Activity {
                     String description = new String();
                     for (int i=0 ; i<forecast.length() ; i++) {
                         JSONObject fcDay = forecast.getJSONObject(i);
-                        description += fcDay.getString("@day") + ": ";
-                        description += fcDay.getString("@text") + ", ";
-                        description += fcDay.getString("@high") + "/";
-                        description += fcDay.getString("@low") + (char) 0x00B0 + unit;
+                        description += fcDay.getString("day") + ": ";
+                        description += fcDay.getString("text") + ", ";
+                        description += fcDay.getString("high") + "/";
+                        description += fcDay.getString("low") + (char) 0x00B0 + unit;
                         if (i+1 != forecast.length())
                             description += "; ";
                         else
